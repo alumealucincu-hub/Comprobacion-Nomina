@@ -1,483 +1,657 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="gl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Comprobación nómina — Convenio Artes Gráficas (2023–2025)</title>
+<title>Calculadora Nómina Vicusgraf</title>
 <style>
-  :root{--bg:#f6f7fb;--card:#fff;--accent:#0b5ed7;--muted:#666;--danger:#c0392b}
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);margin:0;padding:20px;color:#111}
-  .container{max-width:980px;margin:0 auto}
-  h1{margin:0 0 12px;font-size:1.3rem}
-  .card{background:var(--card);padding:16px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:12px}
-  label{display:block;margin:8px 0 4px;font-weight:700}
-  .row{display:flex;gap:12px;flex-wrap:wrap}
-  .col{flex:1;min-width:160px}
-  input[type="text"], input[type="number"], select{width:100%;padding:8px;border:1px solid #d6d9df;border-radius:6px}
-  .small{font-size:.9rem;color:var(--muted)}
-  .muted-link{color:var(--accent);cursor:pointer;text-decoration:underline;font-weight:700}
-  .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
-  button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
-  button.secondary{background:#eef4ff;color:var(--accent);border:1px solid #d6e4ff}
-  .hidden{display:none}
-  .incidence-block{border-left:3px solid #eef2ff;padding:10px;margin-top:8px;border-radius:6px;background:#fbfcfe}
-  .summary-row{display:flex;justify-content:space-between;padding:6px 0}
-  .term{color:var(--accent);cursor:pointer;text-decoration:underline}
-  .nav-buttons{display:flex;gap:8px;justify-content:space-between;margin-top:12px}
-  .error{color:var(--danger);font-weight:700}
-  .help-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .note{background:#fff8e6;padding:8px;border-radius:6px;border:1px solid #ffe8b5}
-  @media (max-width:640px){.row{flex-direction:column}.help-grid{grid-template-columns:1fr}}
-  /* modal */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:999}
-  .modal{background:#fff;padding:16px;border-radius:8px;max-width:720px;width:94%;box-shadow:0 6px 30px rgba(0,0,0,.25)}
-  .modal h3{margin-top:0}
-  table{width:100%;border-collapse:collapse;margin-top:8px}
-  th,td{padding:6px;border:1px solid #eee;text-align:left;font-size:0.95rem}
-  caption{font-weight:700;margin-bottom:6px}
+/* ---------- ESTILO XERAL ---------- */
+:root{
+  --bg:#f3f8f4;
+  --verde-esc:#1f3b2c;
+  --verde-med:#2d5c42;
+  --verde-claro:#cfe3d6;
+  --accent:#4caf50;
+  --muted:#486854;
+}
+html,body{height:100%;margin:0;font-family: "Segoe UI", Arial, sans-serif;background:var(--bg);color:var(--verde-esc);}
+#wizard{position:relative;width:100%;max-width:720px;margin:12px auto;height:calc(100vh - 24px);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.08);overflow:hidden;border-radius:12px;}
+.header{padding:18px 20px;border-bottom:1px solid #eef6ef;background:linear-gradient(90deg,#f7fbf8, #ffffff);}
+.header h1{margin:0;font-size:1.1rem;color:var(--verde-esc);}
+.container{position:relative;height:calc(100% - 64px);overflow:hidden;}
+.screen{position:absolute;left:0;width:100%;height:100%;padding:18px;box-sizing:border-box;overflow:auto;top:100%;transition:top .36s ease;}
+.screen.active{top:0;}
+.screen.up{top:-100%;}
+h2{margin:0 0 8px 0;font-size:1.25rem;color:var(--verde-esc);}
+h3{margin:18px 0 8px 0;font-size:1rem;color:var(--verde-med);}
+label{display:block;margin-top:12px;font-weight:600;}
+.field-row{display:flex;gap:10px;align-items:center;}
+.field-row .col{flex:1;}
+input[type="text"], input[type="number"], select {width:100%;padding:10px;border-radius:10px;border:1px solid #b7d2c0;background:#f7fbf8;font-size:1rem;box-sizing:border-box;}
+.small{font-size:.9rem;padding:8px;}
+.checkbox-inline{display:flex;align-items:center;gap:8px;margin-top:10px;}
+button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight:700;cursor:pointer;font-size:1rem;}
+.btn-full{width:100%;margin-top:14px;}
+.next{background:var(--accent);color:#fff;}
+.back{background:#d9e8dd;color:var(--verde-esc);}
+.ghost{background:transparent;border:1px solid #e6efe6;color:var(--verde-esc);}
+.finish{background:var(--verde-med);color:#fff;}
+.info{color:var(--muted);font-size:.9rem;margin-top:6px;}
+.summary-box{background:var(--bg);padding:12px;border-radius:10px;border:1px solid var(--verde-claro);margin-top:12px;}
+.term{color:var(--accent);text-decoration:underline;cursor:pointer;}
+.footer-actions{display:flex;gap:10px;margin-top:12px;}
+.modal{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;z-index:9999;}
+.modal .card{background:#fff;padding:18px;border-radius:10px;max-width:720px;width:100%;max-height:80vh;overflow:auto;}
+.close-x{float:right;background:#eee;border-radius:8px;padding:6px;cursor:pointer;}
+.inline-note{font-size:.9rem;color:#666;margin-top:6px;}
+@media (min-width:900px){
+  #wizard{max-width:900px;}
+  .field-row{gap:16px;}
+}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>Comprobación de nómina — Convenio Artes Gráficas (2023–2025)</h1>
 
-  <!-- Datos xerais -->
-  <section class="card" id="datos-xerais">
-    <h2>Datos xerais da nómina</h2>
-    <div class="row">
-      <div class="col">
-        <label for="mes"><strong>Mes da nómina</strong></label>
-        <input id="mes" name="mes" type="text" placeholder="Ex: maio" value="">
-      </div>
-      <div class="col">
-        <label for="ano"><strong>Ano da nómina</strong></label>
-        <input id="ano" name="ano" type="number" placeholder="Ex: 2025" min="2023" value="">
-      </div>
-      <div class="col">
-        <label for="nivel"><strong>Nivel salarial</strong></label>
-        <input id="nivel" name="nivel" type="text" placeholder="Ex: 1, 2, 3..." value="">
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:10px">
-      <div class="col">
-        <label><strong>Data de ingreso na empresa</strong></label>
-        <div class="row">
-          <input id="ingreso-dia" type="number" min="1" max="31" placeholder="Día" style="max-width:90px">
-          <input id="ingreso-mes" type="number" min="1" max="12" placeholder="Mes" style="max-width:90px">
-          <input id="ingreso-ano" type="number" min="2013" placeholder="Ano" style="max-width:120px">
-        </div>
-        <div class="small">A data non pode ser anterior a <strong>01/12/2013</strong>.</div>
-      </div>
-
-      <div class="col">
-        <label for="categoria"><strong>Categoría profesional</strong> <span class="small">(opcional)</span></label>
-        <input id="categoria" type="text" placeholder="Ex: Operario, Técnico">
-      </div>
-    </div>
-  </section>
-
-  <!-- Incidencias -->
-  <section class="card" id="incidencias">
-    <h2>Incidencias do mes</h2>
-    <div class="small">Marca se houbo algunha das situacións seguintes:</div>
-    <div style="margin-top:8px">
-      <label><input type="checkbox" id="chk-nocturnidade"> Traballos nocturnos</label>
-      <label><input type="checkbox" id="chk-horasextra"> Horas extra</label>
-      <label><input type="checkbox" id="chk-baixa"> Estiveches de baixa (IT)</label>
-    </div>
-
-    <div id="block-nocturnidade" class="incidence-block hidden">
-      <label for="noct-horas">Horas nocturnas realizadas</label>
-      <input id="noct-horas" type="number" min="0" placeholder="Número de horas nocturnas">
-    </div>
-
-    <div id="block-horasextra" class="incidence-block hidden">
-      <label for="extra-horas">Horas extra realizadas</label>
-      <input id="extra-horas" type="number" min="0" placeholder="Número de horas extra">
-      <label for="extra-tipo">Tipo de horas extra</label>
-      <select id="extra-tipo">
-        <option value="">Selecciona</option>
-        <option value="ordinarias">Ordinarias</option>
-        <option value="festivas">Festivas</option>
-        <option value="nocturnas">Nocturnas</option>
-      </select>
-    </div>
-
-    <div id="block-baixa" class="incidence-block hidden">
-      <label>Datos da baixa</label>
-      <div class="row">
-        <input id="baixa-inicio" type="text" placeholder="Data inicio (DD/MM/AAAA)">
-        <input id="baixa-fin" type="text" placeholder="Data fin (DD/MM/AAAA)">
-      </div>
-      <div class="small">Indica o tipo de IT e se houbo percibos da mutua.</div>
-      <input id="baixa-tipo" type="text" placeholder="Tipo de IT (ex: baixa por enfermidade común)">
-    </div>
-  </section>
-
-  <!-- Datos económicos -->
-  <section class="card" id="datos-economicos">
-    <h2>Datos económicos</h2>
-    <div class="row">
-      <div class="col">
-        <label for="salario-base"><strong>Salario base (mensual)</strong></label>
-        <input id="salario-base" type="number" min="0" step="0.01" placeholder="€">
-      </div>
-      <div class="col">
-        <label for="complementos"><strong>Complementos (mensual)</strong></label>
-        <input id="complementos" type="number" min="0" step="0.01" placeholder="€">
-      </div>
-      <div class="col">
-        <label for="pagas"><strong>Pagas extras (total anual)</strong></label>
-        <input id="pagas" type="number" min="0" step="0.01" placeholder="€">
-      </div>
-    </div>
-
-    <div style="margin-top:12px">
-      <h3 style="margin:8px 0">Tres pagas extra (detallar)</h3>
-      <div class="row">
-        <div class="col">
-          <label>Paga 1 — importe</label>
-          <input id="paga1_importe" type="number" step="0.01" placeholder="€">
-          <label style="margin-top:6px"><input id="paga1_prorrateada" type="checkbox"> Prorrateada</label>
-        </div>
-        <div class="col">
-          <label>Paga 2 — importe</label>
-          <input id="paga2_importe" type="number" step="0.01" placeholder="€">
-          <label style="margin-top:6px"><input id="paga2_prorrateada" type="checkbox"> Prorrateada</label>
-        </div>
-        <div class="col">
-          <label>Paga 3 — importe</label>
-          <input id="paga3_importe" type="number" step="0.01" placeholder="€">
-          <label style="margin-top:6px"><input id="paga3_prorrateada" type="checkbox"> Prorrateada</label>
-        </div>
-      </div>
-      <div class="small" style="margin-top:8px">O formulario aplicará automaticamente as regras do convenio sobre se o complemento lineal entra en cada paga.</div>
-    </div>
-  </section>
-
-  <div class="actions">
-    <button id="btn-calcular">Xerar resumo</button>
+<div id="wizard" role="application" aria-label="Calculadora Nómina Vicusgraf">
+  <div class="header">
+    <h1>Calculadora Nómina — Vicusgraf</h1>
   </div>
 
-  <!-- Resumo -->
-  <section class="card hidden" id="resumo">
-    <h2>Resumo da nómina</h2>
-    <div id="resumo-content"></div>
-    <div class="nav-buttons">
-      <div>
-        <button class="secondary" id="btn-voltar">Voltar</button>
-        <button class="secondary" id="btn-inicio">Voltar ao inicio</button>
+  <div class="container">
+
+    <!-- PANTALLA 1 — DATOS XERAIS -->
+    <section class="screen active" id="screen-1" aria-labelledby="s1title">
+      <h2 id="s1title">Datos xerais da nómina</h2>
+
+      <label>Mes da nómina <span class="term" data-term="mes">[?]</span></label>
+      <select id="mes">
+        <option value="">— Selecciona o mes —</option>
+      </select>
+
+      <label>Ano da nómina <span class="term" data-term="ano">[?]</span></label>
+      <select id="ano">
+        <option value="">— Selecciona o ano —</option>
+      </select>
+
+      <label>Nivel salarial <span class="term" data-term="nivel">[?]</span></label>
+      <select id="nivel">
+        <option value="">— Selecciona o nivel —</option>
+      </select>
+
+      <label>Data de ingreso na empresa (dd/mm/aaaa) <span class="term" data-term="ingreso">[?]</span></label>
+      <input type="text" id="dataIngreso" placeholder="dd/mm/aaaa" aria-describedby="ingroHelp">
+      <p id="ingroHelp" class="info">Non se aceptan datas anteriores a 12/2013. Podes escribir a data manualmente no móbil ou no PC.</p>
+
+      <label>% IRPF aplicado</label>
+      <input type="number" id="irpf" step="0.1" placeholder="Ex.: 15">
+
+      <label class="checkbox-inline"><input type="checkbox" id="prorrata"> Pagas extra prorrateadas</label>
+
+      <div class="footer-actions">
+        <button class="btn-full back ghost" data-back="1" id="btn-reset">Voltar ao inicio</button>
+        <button class="btn-full next" data-next="2" id="btn-to-inc">Continuar</button>
       </div>
-      <div>
-        <button id="btn-imprimir">Imprimir en PDF</button>
+    </section>
+
+    <!-- PANTALLA 2 — INCIDENCIAS (primeira ventá con checkboxes) -->
+    <section class="screen" id="screen-2" aria-labelledby="s2title">
+      <h2 id="s2title">Incidencias do mes</h2>
+
+      <p class="info">Indica se durante o mes se produciron algunha das seguintes situacións. Selecciona as que correspondan; aparecerán os bloques para introducir a información necesaria.</p>
+
+      <label class="checkbox-inline"><input type="checkbox" id="incNoite"> Fixeches traballos nocturnos este mes?</label>
+      <label class="checkbox-inline"><input type="checkbox" id="incHex"> Fixeches horas extra este mes?</label>
+      <label class="checkbox-inline"><input type="checkbox" id="incIT"> Estiveches de baixa por IT este mes?</label>
+
+      <!-- BLOQUE NOCTURNIDADE -->
+      <div id="bloqueNoite" style="display:none;margin-top:12px;">
+        <h3>Nocturnidade <span class="term" data-term="nocturnidade">[?]</span></h3>
+        <label class="checkbox-inline"><input type="checkbox" id="noiteCompleta"> Mes completo en noite</label>
+        <label>Días con nocturnidade (se non é mes completo)</label>
+        <input type="number" id="diasNoite" min="0" placeholder="Ex.: 5">
+        <label>Horas nocturnas laborables</label>
+        <input type="number" id="horasNoiteLab" min="0" placeholder="Ex.: 12">
+        <label>Horas nocturnas festivas</label>
+        <input type="number" id="horasNoiteFest" min="0" placeholder="Ex.: 4">
       </div>
-    </div>
-  </section>
 
-  <!-- Táboas de referencia (visualización / comprobación) -->
-  <section class="card">
-    <h2>Táboas oficiais (extracto)</h2>
-    <div class="small">As táboas 2023 e 2024 foron extraídas do PDF oficial do BOE que subiches.</div>
+      <!-- BLOQUE HORAS EXTRA -->
+      <div id="bloqueHex" style="display:none;margin-top:12px;">
+        <h3>Horas extra <span class="term" data-term="horas_extra">[?]</span></h3>
+        <label>Horas extra en xornada normal</label>
+        <input type="number" id="hexLab" min="0" placeholder="Ex.: 6">
+        <label>Horas extra en fin de semana / festivo</label>
+        <input type="number" id="hexFest" min="0" placeholder="Ex.: 4">
+        <label class="checkbox-inline"><input type="checkbox" id="hexNocturnas"> As horas extra foron nocturnas?</label>
+        <p class="info">As horas extra en xornada normal pagan ao valor da hora ordinaria; en festivo pagan 150%.</p>
+      </div>
 
-    <table aria-label="Tablas salariales 2023">
-      <caption>ANEXO I Tablas salariales 2023</caption>
-      <tr><th>Nivel</th><th>Salario Base</th><th>Paga Verán</th><th>Paga Nadal</th><th>Paga Beneficios</th><th>Complemento Lineal</th><th>Bruto Ano</th></tr>
-      <tr><td>1</td><td>24995.71</td><td>2054.44</td><td>2054.44</td><td>2328.37</td><td>4886.16</td><td>36319.12</td></tr>
-      <tr><td>2</td><td>19868.39</td><td>1633.02</td><td>1633.02</td><td>1850.75</td><td>4886.16</td><td>29871.34</td></tr>
-      <tr><td>3</td><td>19227.48</td><td>1580.34</td><td>1580.34</td><td>1791.05</td><td>4886.16</td><td>29065.37</td></tr>
-      <tr><td>4</td><td>17945.63</td><td>1474.98</td><td>1474.98</td><td>1671.65</td><td>4886.16</td><td>27453.40</td></tr>
-      <tr><td>5</td><td>16663.83</td><td>1369.63</td><td>1369.63</td><td>1552.25</td><td>4886.16</td><td>25841.50</td></tr>
-      <tr><td>6</td><td>15381.98</td><td>1264.27</td><td>1264.27</td><td>1432.84</td><td>4886.16</td><td>24229.52</td></tr>
-      <tr><td>7</td><td>14741.07</td><td>1211.59</td><td>1211.59</td><td>1373.14</td><td>4886.16</td><td>23423.55</td></tr>
-      <tr><td>8</td><td>14100.15</td><td>1158.92</td><td>1158.92</td><td>1313.44</td><td>4886.16</td><td>22617.59</td></tr>
-      <tr><td>9</td><td>13459.23</td><td>1106.24</td><td>1106.24</td><td>1253.74</td><td>4886.16</td><td>21811.61</td></tr>
-      <tr><td>10</td><td>12818.32</td><td>1053.56</td><td>1053.56</td><td>1194.04</td><td>4886.16</td><td>21005.64</td></tr>
-      <tr><td>11</td><td>12177.41</td><td>1000.88</td><td>1000.88</td><td>1134.33</td><td>4886.16</td><td>20199.66</td></tr>
-    </table>
+      <!-- BLOQUE IT (resumo breve; datos completos na pantalla 3 se se marca) -->
+      <div id="bloqueIT" style="display:none;margin-top:12px;">
+        <h3>Incapacidade Temporal (IT) <span class="term" data-term="it">[?]</span></h3>
+        <label class="checkbox-inline"><input type="checkbox" id="haiIT"> Hai baixa por IT este mes</label>
+        <p class="info">Se marcas esta opción, pedirémosche os datos da baixa na seguinte pantalla.</p>
+      </div>
 
-    <table aria-label="Tablas salariales 2024" style="margin-top:12px">
-      <caption>Tablas salariales 2024 (niveles 1–19)</caption>
-      <tr><th>Nivel</th><th>Salario Base</th><th>Paga Verán</th><th>Paga Nadal</th><th>Paga Beneficios</th><th>Complemento Lineal</th><th>Bruto Ano</th></tr>
-      <!-- niveles 1-11 -->
-      <tr><td>1</td><td>25808.07</td><td>2121.21</td><td>2121.21</td><td>2404.04</td><td>5044.96</td><td>37499.49</td></tr>
-      <tr><td>2</td><td>20514.11</td><td>1686.09</td><td>1686.09</td><td>1910.90</td><td>5044.96</td><td>30842.15</td></tr>
-      <tr><td>3</td><td>19852.37</td><td>1631.70</td><td>1631.70</td><td>1849.26</td><td>5044.96</td><td>30009.99</td></tr>
-      <tr><td>4</td><td>18528.86</td><td>1522.92</td><td>1522.92</td><td>1725.98</td><td>5044.96</td><td>28345.64</td></tr>
-      <tr><td>5</td><td>17205.40</td><td>1414.14</td><td>1414.14</td><td>1602.69</td><td>5044.96</td><td>26681.33</td></tr>
-      <tr><td>6</td><td>15881.89</td><td>1305.36</td><td>1305.36</td><td>1479.41</td><td>5044.96</td><td>25016.98</td></tr>
-      <tr><td>7</td><td>15220.15</td><td>1250.97</td><td>1250.97</td><td>1417.77</td><td>5044.96</td><td>24184.82</td></tr>
-      <tr><td>8</td><td>14558.40</td><td>1196.58</td><td>1196.58</td><td>1356.12</td><td>5044.96</td><td>23352.64</td></tr>
-      <tr><td>9</td><td>13896.65</td><td>1142.19</td><td>1142.19</td><td>1294.48</td><td>5044.96</td><td>22520.47</td></tr>
-      <tr><td>10</td><td>13234.92</td><td>1087.80</td><td>1087.80</td><td>1232.84</td><td>5044.96</td><td>21688.32</td></tr>
-      <tr><td>11</td><td>12573.18</td><td>1033.41</td><td>1033.41</td><td>1171.20</td><td>5044.96</td><td>20856.16</td></tr>
-      <!-- niveles 12-19 (extraídos do PDF) -->
-      <tr><td>12</td><td>11911.43</td><td>979.02</td><td>979.02</td><td>1109.56</td><td>5044.96</td><td>20023.99</td></tr>
-      <tr><td>13</td><td>11249.67</td><td>924.63</td><td>924.63</td><td>1047.91</td><td>5044.96</td><td>19191.80</td></tr>
-      <tr><td>14</td><td>10786.47</td><td>886.56</td><td>886.56</td><td>1004.77</td><td>5044.96</td><td>18609.32</td></tr>
-      <tr><td>15</td><td>10257.06</td><td>843.05</td><td>843.05</td><td>955.45</td><td>5044.96</td><td>17943.57</td></tr>
-      <tr><td>16</td><td>9727.66</td><td>799.53</td><td>799.53</td><td>906.14</td><td>5044.96</td><td>17277.82</td></tr>
-      <tr><td>17</td><td>9264.45</td><td>761.46</td><td>761.46</td><td>862.99</td><td>5044.96</td><td>16695.32</td></tr>
-      <tr><td>18</td><td>8867.40</td><td>728.83</td><td>728.83</td><td>826.00</td><td>5044.96</td><td>16196.02</td></tr>
-      <tr><td>19</td><td>8470.34</td><td>696.19</td><td>696.19</td><td>789.02</td><td>5044.96</td><td>15696.70</td></tr>
-    </table>
+      <div class="footer-actions">
+        <button class="back ghost" data-back="1">Volver</button>
+        <button class="next" data-next="3" id="btn-to-it">Continuar</button>
+      </div>
+    </section>
 
-  </section>
+    <!-- PANTALLA 3 — IT (só se incIT/haiIT) -->
+    <section class="screen" id="screen-3" aria-labelledby="s3title">
+      <h2 id="s3title">Incapacidade Temporal (IT)</h2>
 
+      <h3>Tipo de baixa</h3>
+      <label class="checkbox-inline"><input type="radio" name="tipoIT" value="ec"> Enfermidade común</label>
+      <label class="checkbox-inline"><input type="radio" name="tipoIT" value="anl"> Accidente non laboral</label>
+      <label class="checkbox-inline"><input type="radio" name="tipoIT" value="atep"> AT/EP – Accidente de Traballo / Enfermidade Profesional</label>
+      <label class="checkbox-inline"><input type="checkbox" id="hospitalizacion"> Hospitalización</label>
+
+      <h3>Tramo no que te atopas (días totais de baixa)</h3>
+      <p class="info">Os tramos refírense ao número total de días que levas de baixa (non só aos deste mes).</p>
+      <select id="tramoIT">
+        <option value="">— Selecciona tramo —</option>
+        <option value="1-3">1–3 días (0%)</option>
+        <option value="4-20">4–20 días (60%)</option>
+        <option value="21+">21+ días (75%)</option>
+        <option value="atep">AT/EP (75%)</option>
+      </select>
+
+      <h3>Base de cotización do mes anterior</h3>
+      <input type="number" id="baseAnterior" step="0.01" placeholder="Ex.: 1200.00">
+      <p class="info">Introduce a base de cotización por continxencias comúns da nómina do mes anterior á baixa. O formulario calculará a BRD.</p>
+      <p id="brdMostrada" class="inline-note">Base reguladora diaria calculada: —</p>
+
+      <h3>Días de baixa neste mes</h3>
+      <input type="number" id="diasMesIT" min="0" placeholder="Ex.: 10">
+
+      <div class="footer-actions">
+        <button class="back ghost" data-back="2">Volver</button>
+        <button class="next" data-next="4">Continuar</button>
+      </div>
+    </section>
+
+    <!-- PANTALLA 4 — RESUMO -->
+    <section class="screen" id="screen-4" aria-labelledby="s4title">
+      <h2 id="s4title">Resumo da nómina</h2>
+
+      <div id="resumoDevengos" class="summary-box"></div>
+      <div id="resumoBases" class="summary-box"></div>
+      <div id="resumoDeduccions" class="summary-box"></div>
+      <div id="resumoLiquido" class="summary-box"></div>
+
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button id="imprimir" class="next">Imprimir resumo en PDF</button>
+        <button class="back ghost" data-back="1">Voltar ao principio</button>
+        <button class="back" data-back="3">Volver</button>
+      </div>
+    </section>
+
+    <!-- PANTALLA 5 — GLOSARIO (modal tamén usado) -->
+    <section class="screen" id="screen-5" aria-labelledby="s5title">
+      <h2 id="s5title">Glosario de termos</h2>
+      <div id="glosario" class="summary-box">
+        <p>Preme en calquera termo subliñado para ver a súa definición e exemplos.</p>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="back ghost" data-back="4">Pechar</button>
+        <button class="back" data-back="1">Voltar ao principio</button>
+      </div>
+    </section>
+
+  </div>
 </div>
 
-<!-- Modal axuda -->
-<div id="modal-help" class="hidden" aria-hidden="true">
-  <div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal" role="dialog" aria-modal="true">
-      <h3 id="modal-title">Axuda</h3>
-      <div id="modal-body" style="margin-top:8px"></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-        <button class="secondary" id="modal-voltar">Voltar</button>
-        <button id="modal-inicio">Ir ao inicio</button>
-      </div>
+<!-- Modal para glosario / avisos -->
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="card" id="modalCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div id="modalTitle" style="font-weight:800"></div>
+      <div class="close-x" id="modalClose">✕</div>
     </div>
+    <div id="modalBody" style="margin-top:12px;color:#333;"></div>
   </div>
 </div>
 
 <script>
-/* -------------------------
-   Formulario con táboas reais 2023 e 2024 extraídas do PDF do BOE
-   (os valores están normalizados: coma decimal -> punto)
-   2025 mantense como fallback; pódese actualizar se me pasas o PDF 2025 oficial.
-   ------------------------- */
-
-// utilidades DOM
-const $ = id => document.getElementById(id);
-const show = el => el.classList.remove('hidden');
-const hide = el => el.classList.add('hidden');
-
-// --- Táboas do convenio (2023 e 2024 extraídas do PDF) ---
-const tablasConvenio = {
-  "2023": {
-    "niveles": {
-      "1": {"salario_anual":24995.71,"paga_veran":2054.44,"paga_nadal":2054.44,"paga_benef":2328.37,"complemento_lineal":4886.16,"bruto_anual":36319.12},
-      "2": {"salario_anual":19868.39,"paga_veran":1633.02,"paga_nadal":1633.02,"paga_benef":1850.75,"complemento_lineal":4886.16,"bruto_anual":29871.34},
-      "3": {"salario_anual":19227.48,"paga_veran":1580.34,"paga_nadal":1580.34,"paga_benef":1791.05,"complemento_lineal":4886.16,"bruto_anual":29065.37},
-      "4": {"salario_anual":17945.63,"paga_veran":1474.98,"paga_nadal":1474.98,"paga_benef":1671.65,"complemento_lineal":4886.16,"bruto_anual":27453.40},
-      "5": {"salario_anual":16663.83,"paga_veran":1369.63,"paga_nadal":1369.63,"paga_benef":1552.25,"complemento_lineal":4886.16,"bruto_anual":25841.50},
-      "6": {"salario_anual":15381.98,"paga_veran":1264.27,"paga_nadal":1264.27,"paga_benef":1432.84,"complemento_lineal":4886.16,"bruto_anual":24229.52},
-      "7": {"salario_anual":14741.07,"paga_veran":1211.59,"paga_nadal":1211.59,"paga_benef":1373.14,"complemento_lineal":4886.16,"bruto_anual":23423.55},
-      "8": {"salario_anual":14100.15,"paga_veran":1158.92,"paga_nadal":1158.92,"paga_benef":1313.44,"complemento_lineal":4886.16,"bruto_anual":22617.59},
-      "9": {"salario_anual":13459.23,"paga_veran":1106.24,"paga_nadal":1106.24,"paga_benef":1253.74,"complemento_lineal":4886.16,"bruto_anual":21811.61},
-      "10": {"salario_anual":12818.32,"paga_veran":1053.56,"paga_nadal":1053.56,"paga_benef":1194.04,"complemento_lineal":4886.16,"bruto_anual":21005.64},
-      "11": {"salario_anual":12177.41,"paga_veran":1000.88,"paga_nadal":1000.88,"paga_benef":1134.33,"complemento_lineal":4886.16,"bruto_anual":20199.66}
-    },
-    "params": {"porc_contingencias":0.064,"porc_empresa":0.31,"reparto_contingencias":0.70},
-    "pagas": {
-      "paga1": {"incluir_complemento_lineal": true, "nota":"Paga verán (2023)"},
-      "paga2": {"incluir_complemento_lineal": false, "nota":"Paga Nadal (2023)"},
-      "paga3": {"incluir_complemento_lineal": true, "nota":"Paga beneficios (2023)"}
-    }
+/* ---------- DATOS DO CONVENIO 2023 / 2024 / 2025 ---------- */
+/* 2023 (extracto das táboas achegadas) */
+const tablas = {
+  2023: {
+    1:{salarioBase:24995.71,pagaVeran:2054.44,pagaNadal:2054.44,pagaMarzo:2328.37,lineal:4886.16,smi:0},
+    2:{salarioBase:19868.39,pagaVeran:1633.02,pagaNadal:1633.02,pagaMarzo:1850.75,lineal:4886.16,smi:0},
+    3:{salarioBase:19227.48,pagaVeran:1580.34,pagaNadal:1580.34,pagaMarzo:1791.05,lineal:4886.16,smi:0},
+    4:{salarioBase:17945.63,pagaVeran:1474.98,pagaNadal:1474.98,pagaMarzo:1671.65,lineal:4886.16,smi:0},
+    5:{salarioBase:16663.83,pagaVeran:1369.63,pagaNadal:1369.63,pagaMarzo:1552.25,lineal:4886.16,smi:0},
+    6:{salarioBase:15381.98,pagaVeran:1264.27,pagaNadal:1264.27,pagaMarzo:1432.84,lineal:4886.16,smi:0},
+    7:{salarioBase:14741.07,pagaVeran:1211.59,pagaNadal:1211.59,pagaMarzo:1373.14,lineal:4886.16,smi:0},
+    8:{salarioBase:14100.15,pagaVeran:1158.92,pagaNadal:1158.92,pagaMarzo:1313.44,lineal:4886.16,smi:0},
+    9:{salarioBase:13459.23,pagaVeran:1106.24,pagaNadal:1106.24,pagaMarzo:1253.74,lineal:4886.16,smi:0},
+    10:{salarioBase:12818.32,pagaVeran:1053.56,pagaNadal:1053.56,pagaMarzo:1194.04,lineal:4886.16,smi:0},
+    11:{salarioBase:12177.41,pagaVeran:1000.88,pagaNadal:1000.88,pagaMarzo:1134.33,lineal:4886.16,smi:0},
+    12:{salarioBase:11536.49,pagaVeran:948.20,pagaNadal:948.20,pagaMarzo:1074.63,lineal:4886.16,smi:0},
+    13:{salarioBase:10895.56,pagaVeran:895.53,pagaNadal:895.53,pagaMarzo:1014.93,lineal:4886.16,smi:0},
+    14:{salarioBase:10446.94,pagaVeran:858.65,pagaNadal:858.65,pagaMarzo:973.14,lineal:4886.16,smi:0},
+    15:{salarioBase:9934.20,pagaVeran:816.51,pagaNadal:816.51,pagaMarzo:925.38,lineal:4886.16,smi:0},
+    16:{salarioBase:9421.46,pagaVeran:774.37,pagaNadal:774.37,pagaMarzo:877.62,lineal:4886.16,smi:0},
+    17:{salarioBase:8972.83,pagaVeran:737.49,pagaNadal:737.49,pagaMarzo:835.83,lineal:4886.16,smi:0},
+    18:{salarioBase:8588.28,pagaVeran:705.89,pagaNadal:705.89,pagaMarzo:800.00,lineal:4886.16,smi:0},
+    19:{salarioBase:8203.72,pagaVeran:674.28,pagaNadal:674.28,pagaMarzo:764.18,lineal:4886.16,smi:0}
   },
-
-  "2024": {
-    "niveles": {
-      "1": {"salario_anual":25808.07,"paga_veran":2121.21,"paga_nadal":2121.21,"paga_benef":2404.04,"complemento_lineal":5044.96,"bruto_anual":37499.49},
-      "2": {"salario_anual":20514.11,"paga_veran":1686.09,"paga_nadal":1686.09,"paga_benef":1910.90,"complemento_lineal":5044.96,"bruto_anual":30842.15},
-      "3": {"salario_anual":19852.37,"paga_veran":1631.70,"paga_nadal":1631.70,"paga_benef":1849.26,"complemento_lineal":5044.96,"bruto_anual":30009.99},
-      "4": {"salario_anual":18528.86,"paga_veran":1522.92,"paga_nadal":1522.92,"paga_benef":1725.98,"complemento_lineal":5044.96,"bruto_anual":28345.64},
-      "5": {"salario_anual":17205.40,"paga_veran":1414.14,"paga_nadal":1414.14,"paga_benef":1602.69,"complemento_lineal":5044.96,"bruto_anual":26681.33},
-      "6": {"salario_anual":15881.89,"paga_veran":1305.36,"paga_nadal":1305.36,"paga_benef":1479.41,"complemento_lineal":5044.96,"bruto_anual":25016.98},
-      "7": {"salario_anual":15220.15,"paga_veran":1250.97,"paga_nadal":1250.97,"paga_benef":1417.77,"complemento_lineal":5044.96,"bruto_anual":24184.82},
-      "8": {"salario_anual":14558.40,"paga_veran":1196.58,"paga_nadal":1196.58,"paga_benef":1356.12,"complemento_lineal":5044.96,"bruto_anual":23352.64},
-      "9": {"salario_anual":13896.65,"paga_veran":1142.19,"paga_nadal":1142.19,"paga_benef":1294.48,"complemento_lineal":5044.96,"bruto_anual":22520.47},
-      "10": {"salario_anual":13234.92,"paga_veran":1087.80,"paga_nadal":1087.80,"paga_benef":1232.84,"complemento_lineal":5044.96,"bruto_anual":21688.32},
-      "11": {"salario_anual":12573.18,"paga_veran":1033.41,"paga_nadal":1033.41,"paga_benef":1171.20,"complemento_lineal":5044.96,"bruto_anual":20856.16},
-      "12": {"salario_anual":11911.43,"paga_veran":979.02,"paga_nadal":979.02,"paga_benef":1109.56,"complemento_lineal":5044.96,"bruto_anual":20023.99},
-      "13": {"salario_anual":11249.67,"paga_veran":924.63,"paga_nadal":924.63,"paga_benef":1047.91,"complemento_lineal":5044.96,"bruto_anual":19191.80},
-      "14": {"salario_anual":10786.47,"paga_veran":886.56,"paga_nadal":886.56,"paga_benef":1004.77,"complemento_lineal":5044.96,"bruto_anual":18609.32},
-      "15": {"salario_anual":10257.06,"paga_veran":843.05,"paga_nadal":843.05,"paga_benef":955.45,"complemento_lineal":5044.96,"bruto_anual":17943.57},
-      "16": {"salario_anual":9727.66,"paga_veran":799.53,"paga_nadal":799.53,"paga_benef":906.14,"complemento_lineal":5044.96,"bruto_anual":17277.82},
-      "17": {"salario_anual":9264.45,"paga_veran":761.46,"paga_nadal":761.46,"paga_benef":862.99,"complemento_lineal":5044.96,"bruto_anual":16695.32},
-      "18": {"salario_anual":8867.40,"paga_veran":728.83,"paga_nadal":728.83,"paga_benef":826.00,"complemento_lineal":5044.96,"bruto_anual":16196.02},
-      "19": {"salario_anual":8470.34,"paga_veran":696.19,"paga_nadal":696.19,"paga_benef":789.02,"complemento_lineal":5044.96,"bruto_anual":15696.70}
-    },
-    "params": {"porc_contingencias":0.064,"porc_empresa":0.31,"reparto_contingencias":0.70},
-    "pagas": {
-      "paga1": {"incluir_complemento_lineal": true, "nota":"Paga verán (2024)"},
-      "paga2": {"incluir_complemento_lineal": true, "nota":"Paga Nadal (2024)"},
-      "paga3": {"incluir_complemento_lineal": false, "nota":"Paga beneficios (2024)"}
-    }
+  2024: {
+    1:{salarioBase:25808.07,pagaVeran:2121.21,pagaNadal:2121.21,pagaMarzo:2404.04,lineal:5044.96,smi:0},
+    2:{salarioBase:20514.11,pagaVeran:1686.09,pagaNadal:1686.09,pagaMarzo:1910.90,lineal:5044.96,smi:0},
+    3:{salarioBase:19852.37,pagaVeran:1631.70,pagaNadal:1631.70,pagaMarzo:1849.26,lineal:5044.96,smi:0},
+    4:{salarioBase:18528.86,pagaVeran:1522.92,pagaNadal:1522.92,pagaMarzo:1725.98,lineal:5044.96,smi:0},
+    5:{salarioBase:17205.40,pagaVeran:1414.14,pagaNadal:1414.14,pagaMarzo:1602.69,lineal:5044.96,smi:0},
+    6:{salarioBase:15881.89,pagaVeran:1305.36,pagaNadal:1305.36,pagaMarzo:1479.41,lineal:5044.96,smi:0},
+    7:{salarioBase:15220.15,pagaVeran:1250.97,pagaNadal:1250.97,pagaMarzo:1417.77,lineal:5044.96,smi:0},
+    8:{salarioBase:14558.40,pagaVeran:1196.58,pagaNadal:1196.58,pagaMarzo:1356.12,lineal:5044.96,smi:0},
+    9:{salarioBase:13896.65,pagaVeran:1142.19,pagaNadal:1142.19,pagaMarzo:1294.48,lineal:5044.96,smi:0},
+    10:{salarioBase:13234.92,pagaVeran:1087.80,pagaNadal:1087.80,pagaMarzo:1232.84,lineal:5044.96,smi:0},
+    11:{salarioBase:12573.18,pagaVeran:1033.41,pagaNadal:1033.41,pagaMarzo:1171.20,lineal:5044.96,smi:0},
+    12:{salarioBase:11911.43,pagaVeran:979.02,pagaNadal:979.02,pagaMarzo:1109.56,lineal:5044.96,smi:0},
+    13:{salarioBase:11249.67,pagaVeran:924.63,pagaNadal:924.63,pagaMarzo:1047.91,lineal:5044.96,smi:0},
+    14:{salarioBase:10786.47,pagaVeran:886.56,pagaNadal:886.56,pagaMarzo:1004.77,lineal:5044.96,smi:0},
+    15:{salarioBase:10257.06,pagaVeran:843.05,pagaNadal:843.05,pagaMarzo:955.45,lineal:5044.96,smi:0},
+    16:{salarioBase:9727.66,pagaVeran:799.53,pagaNadal:799.53,pagaMarzo:906.14,lineal:5044.96,smi:0},
+    17:{salarioBase:9264.45,pagaVeran:761.46,pagaNadal:761.46,pagaMarzo:862.99,lineal:5044.96,smi:0},
+    18:{salarioBase:8867.40,pagaVeran:728.83,pagaNadal:728.83,pagaMarzo:826.00,lineal:5044.96,smi:0},
+    19:{salarioBase:8470.34,pagaVeran:696.19,pagaNadal:696.19,pagaMarzo:789.02,lineal:5044.96,smi:0}
   },
-
-  /* 2025: fallback (se queres que substitúa polos valores oficiais 2025, pásame o PDF 2025) */
-  "2025": {
-    "niveles": {},
-    "params": {"porc_contingencias":0.064,"porc_empresa":0.31,"reparto_contingencias":0.70},
-    "pagas": {
-      "paga1": {"incluir_complemento_lineal": true, "nota":"Referencia 2025 (fallback)"},
-      "paga2": {"incluir_complemento_lineal": false, "nota":"Referencia 2025 (fallback)"},
-      "paga3": {"incluir_complemento_lineal": true, "nota":"Referencia 2025 (fallback)"}
-    }
+  2025: {
+    1:  { salarioBase: 26582.31, pagaVeran: 2184.85, pagaNadal: 2184.85, pagaMarzo: 2476.16, lineal: 5196.31, smi: 0.00 },
+    2:  { salarioBase: 21129.53, pagaVeran: 1736.67, pagaNadal: 1736.67, pagaMarzo: 1968.23, lineal: 5196.31, smi: 0.00 },
+    3:  { salarioBase: 20447.94, pagaVeran: 1680.65, pagaNadal: 1680.65, pagaMarzo: 1904.74, lineal: 5196.31, smi: 0.00 },
+    4:  { salarioBase: 19084.73, pagaVeran: 1568.61, pagaNadal: 1568.61, pagaMarzo: 1777.76, lineal: 5196.31, smi: 0.00 },
+    5:  { salarioBase: 17721.55, pagaVeran: 1456.57, pagaNadal: 1456.57, pagaMarzo: 1650.77, lineal: 5196.31, smi: 0.00 },
+    6:  { salarioBase: 16358.35, pagaVeran: 1344.52, pagaNadal: 1344.52, pagaMarzo: 1523.79, lineal: 5196.31, smi: 0.00 },
+    7:  { salarioBase: 15676.78, pagaVeran: 1288.50, pagaNadal: 1288.50, pagaMarzo: 1460.30, lineal: 5196.31, smi: 0.00 },
+    8:  { salarioBase: 14995.15, pagaVeran: 1232.48, pagaNadal: 1232.48, pagaMarzo: 1396.81, lineal: 5196.31, smi: 0.00 },
+    9:  { salarioBase: 14313.57, pagaVeran: 1176.46, pagaNadal: 1176.46, pagaMarzo: 1333.32, lineal: 5196.31, smi: 0.00 },
+    10: { salarioBase: 13631.97, pagaVeran: 1120.44, pagaNadal: 1120.44, pagaMarzo: 1269.83, lineal: 5196.31, smi: 0.00 },
+    11: { salarioBase: 12950.37, pagaVeran: 1064.41, pagaNadal: 1064.41, pagaMarzo: 1206.34, lineal: 5196.31, smi: 0.00 },
+    12: { salarioBase: 12268.77, pagaVeran: 1008.39, pagaNadal: 1008.39, pagaMarzo: 1142.84, lineal: 5196.31, smi: 0.00 },
+    13: { salarioBase: 11587.16, pagaVeran: 952.37, pagaNadal: 952.37, pagaMarzo: 1079.35, lineal: 5196.31, smi: 0.00 },
+    14: { salarioBase: 11110.06, pagaVeran: 913.16, pagaNadal: 913.16, pagaMarzo: 1034.91, lineal: 5196.31, smi: 0.00 },
+    15: { salarioBase: 10564.77, pagaVeran: 868.34, pagaNadal: 868.34, pagaMarzo: 984.12,  lineal: 5196.31, smi: 0.00 },
+    16: { salarioBase: 10019.49, pagaVeran: 823.52, pagaNadal: 823.52, pagaMarzo: 933.32,  lineal: 5196.31, smi: 0.00 },
+    17: { salarioBase: 9542.38,  pagaVeran: 784.31, pagaNadal: 784.31, pagaMarzo: 888.88,  lineal: 5196.31, smi: 0.00 },
+    18: { salarioBase: 9133.42,  pagaVeran: 750.69, pagaNadal: 750.69, pagaMarzo: 850.78,  lineal: 5196.31, smi: 0.00 },
+    19: { salarioBase: 8724.45,  pagaVeran: 717.08, pagaNadal: 717.08, pagaMarzo: 812.69,  lineal: 5196.31, smi: 408.39 }
   }
 };
 
-// utilidades de validación e UI
-function ingresoValido(){
-  const d = parseInt($('ingreso-dia').value||'0',10);
-  const m = parseInt($('ingreso-mes').value||'0',10);
-  const a = parseInt($('ingreso-ano').value||'0',10);
-  if(!d || !m || !a) return {ok:false,msg:'Falta a data completa de ingreso.'};
-  const fecha = new Date(a, m-1, d);
-  const minFecha = new Date(2013,11,1);
-  if(fecha < minFecha) return {ok:false,msg:'A data de ingreso non pode ser anterior a 01/12/2013.'};
-  if(fecha.getDate() !== d) return {ok:false,msg:'Data de ingreso inválida.'};
-  return {ok:true,fecha};
-}
-['nocturnidade','horasextra','baixa'].forEach(key=>{
-  const chk = $('chk-'+key);
-  if(chk) chk.addEventListener('change', e=>{
-    const block = $('block-'+key);
-    if(e.target.checked) show(block); else hide(block);
-  });
-});
-
-// axuda modal
-const helpTexts = {
-  'base_total':{title:'Base total de cotización',body:'Suma das percepcións retributivas suxeitas a cotización: salario base, complementos, pagas non prorrateadas, horas extra suxeitas, etc.'},
-  'irpf':{title:'Retención IRPF',body:'Importe detraído para o imposto sobre a renda. Varía segundo situación persoal e base suxeita.'},
-  'devengos':{title:'Devengos',body:'Percepcións que recibe o traballador: salario base, complementos, pagas extras, horas extra, nocturnidade, indemnizacións, etc.'}
+/* Nocturnidade por ano (2023/2024/2025) — usamos as táboas achegadas */
+const nocturnidad = {
+  2023: {
+    normal:{1:4.24,2:3.37,3:3.26,4:3.05,5:2.83,6:2.61,7:2.50,8:2.39,9:2.28,10:2.18,11:2.07,12:1.96,13:1.85,14:1.77,15:1.69,16:1.60,17:1.52,18:1.46,19:1.39},
+    festiva:{1:4.95,2:3.93,3:3.81,4:3.55,5:3.30,6:3.05,7:2.92,8:2.79,9:2.66,10:2.54,11:2.41,12:2.28,13:2.16,14:2.07,15:1.97,16:1.87,17:1.78,18:1.70,19:1.62}
+  },
+  2024: {
+    normal:{1:4.38,2:3.48,3:3.37,4:3.15,5:2.92,6:2.69,7:2.58,8:2.47,9:2.35,10:2.25,11:2.14,12:2.02,13:1.91,14:1.83,15:1.74,16:1.65,17:1.57,18:1.51,19:1.44},
+    festiva:{1:5.11,2:4.06,3:3.93,4:3.67,5:3.41,6:3.15,7:3.01,8:2.88,9:2.75,10:2.62,11:2.49,12:2.35,13:2.23,14:2.14,15:2.03,16:1.93,17:1.84,18:1.76,19:1.67}
+  },
+  2025: {
+    normal:{1:4.53,2:3.60,3:3.49,4:3.25,5:3.02,6:2.79,7:2.67,8:2.56,9:2.44,10:2.32,11:2.21,12:2.09,13:1.98,14:1.89,15:1.80,16:1.71,17:1.63,18:1.56,19:1.49},
+    festiva:{1:5.29,2:4.20,3:4.07,4:3.80,5:3.52,6:3.25,7:3.12,8:2.98,9:2.85,10:2.71,11:2.58,12:2.44,13:2.30,14:2.21,15:2.10,16:1.99,17:1.90,18:1.82,19:1.73}
+  }
 };
-function openHelp(key){
-  const modal = $('modal-help');
-  const title = $('modal-title');
-  const body = $('modal-body');
-  const info = helpTexts[key] || {title:'Información', body:'Non hai información dispoñible.'};
-  title.textContent = info.title;
-  body.innerHTML = '<p>'+info.body+'</p>';
-  modal.classList.remove('hidden');
-  modal.setAttribute('aria-hidden','false');
+
+/* ---------- AUXILIARES ---------- */
+function anoReferencia(ano){
+  if (!ano) return null;
+  if (ano >= 2026) return 2025;
+  return ano;
 }
-$('modal-backdrop').addEventListener('click', (e)=>{ if(e.target.id==='modal-backdrop') closeModal(); });
-function closeModal(){ $('modal-help').classList.add('hidden'); $('modal-help').setAttribute('aria-hidden','true'); }
-$('modal-voltar').addEventListener('click', closeModal);
-$('modal-inicio').addEventListener('click', ()=>{ closeModal(); window.scrollTo({top:0,behavior:'smooth'}); });
+function horasAnuais(ano){
+  // ata 2024: 1768; desde 2025: 1760
+  return (ano >= 2025) ? 1760 : 1768;
+}
 
-// regras de pagas segundo táboa (aplicadas automaticamente)
-function getTablaAno(ano){ const k=String(ano); return tablasConvenio[k] || tablasConvenio["2025"]; }
+/* ---------- INICIALIZACIÓN SELECTS ---------- */
+(function initSelects(){
+  const mesSelect = document.getElementById('mes');
+  const anoSelect = document.getElementById('ano');
+  const nivelSelect = document.getElementById('nivel');
+  const meses = ['Xaneiro','Febreiro','Marzo','Abril','Maio','Xuño','Xullo','Agosto','Setembro','Outubro','Novembro','Decembro'];
+  meses.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i+1; o.textContent=m; mesSelect.appendChild(o); });
+  const anoActual = new Date().getFullYear();
+  for(let a=anoActual-3;a<=anoActual+1;a++){ const o=document.createElement('option'); o.value=a; o.textContent=a; anoSelect.appendChild(o); }
+  for(let n=1;n<=19;n++){ const o=document.createElement('option'); o.value=n; o.textContent='Nivel '+n; nivelSelect.appendChild(o); }
+})();
 
-function calcularPagasSegunConvenio(ano, nivel, pagasInput){
-  const tabla = getTablaAno(ano);
-  const nivelObj = (tabla.niveles && tabla.niveles[nivel]) ? tabla.niveles[nivel] : null;
-  const complementoLinealNivel = nivelObj ? (nivelObj.complemento_lineal || nivelObj.complemento_lineal === 0 ? nivelObj.complemento_lineal : (nivelObj.complemento_lineal || 0)) : 0;
-  const reglasPagas = tabla.pagas || {};
-  let pagas_no_prorrateadas_total = 0;
-  const detallePagas = [];
-  pagasInput.forEach(p=>{
-    const regla = reglasPagas[p.id] || {incluir_complemento_lineal:true, nota:''};
-    let importeConsiderado = 0;
-    if(!p.prorrateada){
-      importeConsiderado = p.importe || 0;
-      if(!regla.incluir_complemento_lineal){
-        importeConsiderado = Math.max(0, importeConsiderado - complementoLinealNivel);
+/* ---------- NAVEGACIÓN ENTRE PANTALLAS ---------- */
+const screens = document.querySelectorAll('.screen');
+function showScreen(id){
+  screens.forEach(s=>s.classList.remove('active','up'));
+  const target = document.getElementById('screen-'+id);
+  if (!target) return;
+  target.classList.add('active');
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.next').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const next = btn.getAttribute('data-next');
+    if (next==='3'){
+      // se non hai incidencia IT, saltar ao resumo
+      const incIT = document.getElementById('incIT').checked;
+      const haiIT = document.getElementById('haiIT').checked;
+      if (!incIT && !haiIT){
+        showScreen('4'); calcularResumo(); return;
       }
-      pagas_no_prorrateadas_total += importeConsiderado;
+      // se incIT marcado pero non hai "haiIT" na pantalla 2, we'll still go to IT screen to fill details
     }
-    detallePagas.push({
-      id: p.id,
-      importe_original: p.importe || 0,
-      prorrateada: !!p.prorrateada,
-      incluir_complemento_lineal_aplicado: !!regla.incluir_complemento_lineal,
-      nota_regra: regla.nota || ''
-    });
+    if (next==='4'){ calcularResumo(); }
+    showScreen(next);
   });
-  return { pagas_no_prorrateadas_total, detallePagas, complementoLinealNivel };
-}
-
-function calcularNominaConvenioAuto(){
-  const ano = parseInt($('ano').value || '0',10);
-  const nivel = ($('nivel').value || '').trim();
-  const salarioBase = parseFloat($('salario-base').value || 0);
-  const complementos = parseFloat($('complementos').value || 0);
-
-  if(!ano || !nivel){ alert('Completa os campos: Ano e Nivel.'); return null; }
-  const ingreso = ingresoValido();
-  if(!ingreso.ok){ alert(ingreso.msg); return null; }
-
-  const pagasInput = [
-    { id:'paga1', importe: parseFloat($('paga1_importe')?.value || 0), prorrateada: !!$('paga1_prorrateada')?.checked },
-    { id:'paga2', importe: parseFloat($('paga2_importe')?.value || 0), prorrateada: !!$('paga2_prorrateada')?.checked },
-    { id:'paga3', importe: parseFloat($('paga3_importe')?.value || 0), prorrateada: !!$('paga3_prorrateada')?.checked }
-  ];
-
-  const tabla = getTablaAno(ano);
-  const params = tabla.params || {porc_contingencias:0.064, porc_empresa:0.31, reparto_contingencias:0.7};
-
-  const { pagas_no_prorrateadas_total, detallePagas, complementoLinealNivel } = calcularPagasSegunConvenio(ano, nivel, pagasInput);
-
-  const baseAnual = (salarioBase + complementos) * 12 + pagas_no_prorrateadas_total;
-  const pagas_prorrateadas_total = pagasInput.reduce((acc,p)=> acc + (p.prorrateada ? p.importe : 0), 0);
-  const baseMensual = salarioBase + complementos + (pagas_prorrateadas_total / 12);
-
-  const baseContingencias = +(baseMensual * params.reparto_contingencias).toFixed(2);
-  const baseRecaudacion = +(baseMensual * (1 - params.reparto_contingencias)).toFixed(2);
-  const baseIRPF = +baseMensual.toFixed(2);
-  const aportacionEmpresa = +(baseMensual * params.porc_empresa).toFixed(2);
-
-  return {
-    ano, nivel, salarioBase, complementos,
-    baseAnual, baseMensual, baseContingencias, baseRecaudacion, baseIRPF, aportacionEmpresa,
-    pagas_no_prorrateadas_total, pagas_prorrateadas_total, detallePagas, complementoLinealNivel, tablaAplicada: tabla
-  };
-}
-
-// acción do botón
-$('btn-calcular').addEventListener('click', ()=>{
-  const res = calcularNominaConvenioAuto();
-  if(!res) return;
-
-  const cont = $('resumo-content');
-  let html = '';
-  html += `<div class="summary-row"><strong>Mes</strong><span>${$('mes').value || '—'}</span></div>`;
-  html += `<div class="summary-row"><strong>Ano</strong><span>${res.ano}</span></div>`;
-  html += `<div class="summary-row"><strong>Nivel</strong><span>${res.nivel}</span></div>`;
-  html += `<hr>`;
-  html += `<div class="summary-row"><strong>Salario base (mensual)</strong><span>€ ${res.salarioBase.toFixed(2)}</span></div>`;
-  html += `<div class="summary-row"><strong>Complementos (mensual)</strong><span>€ ${res.complementos.toFixed(2)}</span></div>`;
-  html += `<div class="summary-row"><strong>Pagas non prorrateadas (total considerado)</strong><span>€ ${res.pagas_no_prorrateadas_total.toFixed(2)}</span></div>`;
-  html += `<hr>`;
-  html += `<div class="summary-row"><strong class="term" onclick="openHelp('base_total')">Base total de cotización (mensual estimada)</strong><span>€ ${res.baseMensual.toFixed(2)}</span></div>`;
-  html += `<div class="summary-row"><strong class="term" onclick="openHelp('base_total')">Base continxencias</strong><span>€ ${res.baseContingencias.toFixed(2)}</span></div>`;
-  html += `<div class="summary-row"><strong class="term" onclick="openHelp('base_total')">Base recadación conxunta</strong><span>€ ${res.baseRecaudacion.toFixed(2)}</span></div>`;
-  html += `<div class="summary-row"><strong class="term" onclick="openHelp('irpf')">Base suxeita a IRPF</strong><span>€ ${res.baseIRPF.toFixed(2)}</span></div>`;
-  html += `<div class="summary-row"><strong>Aportación empresa</strong><span>€ ${res.aportacionEmpresa.toFixed(2)}</span></div>`;
-  html += `<hr>`;
-  html += `<h3>Detalle de pagas extra e regra aplicada</h3>`;
-  res.detallePagas.forEach(p=>{
-    html += `<div class="summary-row"><strong>${p.id.toUpperCase()}</strong><span>Importe: € ${p.importe_original.toFixed(2)}; Prorrateada: ${p.prorrateada ? 'Si' : 'Non'}</span></div>`;
-    html += `<div class="small">Regra: Complemento lineal ${p.incluir_complemento_lineal_aplicado ? 'INCLUIDO' : 'EXCLUIDO'}; ${p.nota_regra}</div>`;
+});
+document.querySelectorAll('.back').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const back = btn.getAttribute('data-back');
+    if (!back) return;
+    showScreen(back);
   });
-  html += `<div class="small">Complemento lineal do nivel aplicado: € ${res.complementoLinealNivel.toFixed(2)}</div>`;
-  html += `<hr>`;
-  html += `<div class="note small">A táboa aplicada: referencia ano ${res.ano}. Se non existe táboa para o ano indicado, úsase 2025 como referencia (fallback).</div>`;
-
-  cont.innerHTML = html;
-  show($('resumo'));
-  $('resumo').scrollIntoView({behavior:'smooth'});
+});
+document.getElementById('btn-reset').addEventListener('click',()=>{
+  // reset basic fields
+  document.getElementById('mes').value='';
+  document.getElementById('ano').value='';
+  document.getElementById('nivel').value='';
+  document.getElementById('dataIngreso').value='';
+  document.getElementById('irpf').value='';
+  document.getElementById('prorrata').checked=false;
+  // incidencias
+  ['incNoite','incHex','incIT','noiteCompleta','hexNocturnas','haiIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
+  ['diasNoite','horasNoiteLab','horasNoiteFest','hexLab','hexFest','baseAnterior','diasMesIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  toggleIncidencias();
+  showScreen('1');
 });
 
-// navegación e impresión
-$('btn-voltar').addEventListener('click', ()=>{ window.scrollTo({top: document.getElementById('datos-economicos').offsetTop - 20, behavior:'smooth'}); });
-$('btn-inicio').addEventListener('click', ()=>{ window.scrollTo({top:0,behavior:'smooth'}); });
-$('btn-imprimir').addEventListener('click', ()=>{ window.print(); });
+/* ---------- TOGGLE BLOQUES INCIDENCIAS ---------- */
+function toggleIncidencias(){
+  document.getElementById('bloqueNoite').style.display = document.getElementById('incNoite').checked ? 'block' : 'none';
+  document.getElementById('bloqueHex').style.display = document.getElementById('incHex').checked ? 'block' : 'none';
+  document.getElementById('bloqueIT').style.display = document.getElementById('incIT').checked ? 'block' : 'none';
+}
+['incNoite','incHex','incIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('change',toggleIncidencias); });
 
-// modal global
-window.openHelp = openHelp;
-window.closeModal = closeModal;
+/* ---------- DATA INGRESO VALIDACIÓN ---------- */
+function parseDataIngreso(){
+  const txt = (document.getElementById('dataIngreso').value || '').trim();
+  if (!txt) return null;
+  const parts = txt.split('/');
+  if (parts.length!==3) return null;
+  const d = parseInt(parts[0],10), m = parseInt(parts[1],10), a = parseInt(parts[2],10);
+  if (!d || !m || !a) return null;
+  const dt = new Date(a, m-1, d);
+  if (isNaN(dt.getTime())) return null;
+  const min = new Date(2013,11,1); // 1 dec 2013
+  if (dt < min) return null;
+  return dt;
+}
 
-// inicialización
-window.addEventListener('load', ()=>{
-  $('mes').value = '';
-  $('ano').value = '';
-  $('nivel').value = '';
+/* ---------- BRD (base reguladora diaria) ---------- */
+const baseAnteriorInput = document.getElementById('baseAnterior');
+const brdMostrada = document.getElementById('brdMostrada');
+let brdCalculada = 0;
+baseAnteriorInput.addEventListener('input',()=>{
+  const base = parseFloat(baseAnteriorInput.value || '0');
+  if (base > 0){ brdCalculada = base / 30; brdMostrada.textContent = 'Base reguladora diaria calculada: ' + brdCalculada.toFixed(4) + ' €/día'; }
+  else { brdCalculada = 0; brdMostrada.textContent = 'Base reguladora diaria calculada: —'; }
 });
+
+/* ---------- OBTÉN DATOS DO NIVEL E ANO ---------- */
+function obterDatosNivelAno(){
+  const anoSel = parseInt(document.getElementById('ano').value || '0',10);
+  const nivelSel = parseInt(document.getElementById('nivel').value || '0',10);
+  if (!anoSel || !nivelSel) return null;
+  const ref = anoReferencia(anoSel);
+  if (!ref) return null;
+  // se non hai táboas para ese ano, usamos 2025 como referencia (requisito)
+  const refUse = (ref >= 2026) ? 2025 : ref;
+  const tAno = tablas[refUse];
+  if (!tAno) return null;
+  const t = tAno[nivelSel];
+  if (!t) return null;
+  const salarioAnualTotal = t.salarioBase + t.pagaVeran + t.pagaNadal + t.pagaMarzo + t.lineal + t.smi;
+  const horasAno = horasAnuais(refUse);
+  const valorHora = salarioAnualTotal / horasAno;
+  // nocturnidade por ano
+  const noct = nocturnidad[refUse] || nocturnidad[2025];
+  return { anoSel, refUse, nivelSel, t, salarioAnualTotal, horasAno, valorHora, noct };
+}
+
+/* ---------- CÁLCULO NOCTURNIDADE ---------- */
+function calcularNocturnidade(dados){
+  if (!dados) return 0;
+  const nivel = dados.nivelSel;
+  const prezoNoiteNormal = (dados.noct && dados.noct.normal && dados.noct.normal[nivel]) ? dados.noct.normal[nivel] : 0;
+  const prezoNoiteFestiva = (dados.noct && dados.noct.festiva && dados.noct.festiva[nivel]) ? dados.noct.festiva[nivel] : 0;
+  const noiteCompleta = document.getElementById('noiteCompleta').checked;
+  const diasNoite = parseFloat(document.getElementById('diasNoite').value || '0');
+  const horasNoiteLab = parseFloat(document.getElementById('horasNoiteLab').value || '0');
+  const horasNoiteFest = parseFloat(document.getElementById('horasNoiteFest').value || '0');
+  let horasNocturnasLab = horasNoiteLab;
+  let horasNocturnasFest = horasNoiteFest;
+  if (noiteCompleta && diasNoite>0){
+    const horasDia = 8;
+    horasNocturnasLab += diasNoite * horasDia;
+  }
+  const importeNoctLab = horasNocturnasLab * prezoNoiteNormal;
+  const importeNoctFest = horasNocturnasFest * prezoNoiteFestiva;
+  return importeNoctLab + importeNoctFest;
+}
+
+/* ---------- HORAS EXTRA ---------- */
+function calcularHorasExtra(dados){
+  if (!dados) return {hexNormais:0,hexFestivas:0,total:0};
+  const valorHora = dados.valorHora;
+  const hexLab = parseFloat(document.getElementById('hexLab').value || '0');
+  const hexFest = parseFloat(document.getElementById('hexFest').value || '0');
+  const importeHexNormais = hexLab * valorHora;
+  const importeHexFestivas = hexFest * valorHora * 1.5;
+  // se son nocturnas, poderiamos aplicar complemento nocturnidade por hora extra; por agora sumamos simple
+  return { hexNormais:importeHexNormais, hexFestivas:importeHexFestivas, total:importeHexNormais+importeHexFestivas };
+}
+
+/* ---------- SALARIO BASE, PRORRATA E COMPLEMENTOS ---------- */
+function calcularSalarioBase(dados){
+  if (!dados) return {salarioMensual:0,prorrata:0,linealMensual:0,smiMensual:0,total:0};
+  const t = dados.t;
+  const prorrata = document.getElementById('prorrata').checked;
+  const salarioMensual = t.salarioBase / 12;
+  const linealMensual = t.lineal / 12;
+  const smiMensual = t.smi / 12;
+  let prorrataMensual = 0;
+  if (prorrata) prorrataMensual = (t.pagaVeran + t.pagaNadal + t.pagaMarzo) / 12;
+  const total = salarioMensual + linealMensual + smiMensual + prorrataMensual;
+  return { salarioMensual, prorrata:prorrataMensual, linealMensual, smiMensual, total };
+}
+
+/* ---------- CÁLCULO IT ---------- */
+function calcularIT(){
+  const incIT = document.getElementById('incIT').checked;
+  const haiIT = document.getElementById('haiIT').checked;
+  if (!incIT && !haiIT) return {devengoIT:0,prestacionSS:0,complementoEmpresa:0};
+  const tipoIT = document.querySelector('input[name="tipoIT"]:checked');
+  const tramo = document.getElementById('tramoIT').value;
+  const diasMesIT = parseFloat(document.getElementById('diasMesIT').value || '0');
+  if (!tipoIT || !tramo || brdCalculada===0 || diasMesIT===0) return {devengoIT:0,prestacionSS:0,complementoEmpresa:0};
+  let porcentaxeSS=0, porcentaxeFinal=0;
+  if (tramo==='1-3'){ porcentaxeSS=0; porcentaxeFinal=0; }
+  else if (tramo==='4-20'){ porcentaxeSS=0.60; porcentaxeFinal=0.60; }
+  else if (tramo==='21+'){ porcentaxeSS=0.75; porcentaxeFinal=0.75; }
+  else if (tramo==='atep'){ porcentaxeSS=0.75; porcentaxeFinal=0.75; if (document.getElementById('hospitalizacion').checked) porcentaxeFinal=1.0; }
+  const prestacionSS = brdCalculada * diasMesIT * porcentaxeSS;
+  const devengoFinal = brdCalculada * diasMesIT * porcentaxeFinal;
+  const complementoEmpresa = Math.max(0, devengoFinal - prestacionSS);
+  return { devengoIT:devengoFinal, prestacionSS, complementoEmpresa };
+}
+
+/* ---------- RESUMO FINAL (inclúe bases e deducións) ---------- */
+function calcularResumo(){
+  const resumoDevengos = document.getElementById('resumoDevengos');
+  const resumoBases = document.getElementById('resumoBases');
+  const resumoDeduccions = document.getElementById('resumoDeduccions');
+  const resumoLiquido = document.getElementById('resumoLiquido');
+
+  // validar data ingreso
+  const dataIng = parseDataIngreso();
+  if (!dataIng){
+    resumoDevengos.innerHTML = '<p style="color:#b33">Revisa a data de ingreso (formato dd/mm/aaaa e non anterior a 12/2013).</p>';
+    resumoBases.innerHTML = resumoDeduccions.innerHTML = resumoLiquido.innerHTML = '';
+    showScreen('4');
+    return;
+  }
+
+  const dados = obterDatosNivelAno();
+  if (!dados){
+    resumoDevengos.innerHTML = '<p style="color:#b33">Faltan datos de ano ou nivel. Selecciona o ano e o nivel para continuar.</p>';
+    resumoBases.innerHTML = resumoDeduccions.innerHTML = resumoLiquido.innerHTML = '';
+    showScreen('4');
+    return;
+  }
+
+  const sal = calcularSalarioBase(dados);
+  const noct = calcularNocturnidade(dados);
+  const hex = calcularHorasExtra(dados);
+  const it = calcularIT();
+
+  // Devengos: salario mensual (sen prorrata se non marcada) + lineal + prorrata (se marcada) + nocturnidade + horas extra + IT
+  const devengosTotais = sal.total + noct + hex.total + it.devengoIT;
+
+  // Bases de cotización: para simplificar mostramos base mensual estimada e base anual (según convenio)
+  const baseMensualEstim = devengosTotais;
+  const baseAnualConvenio = dados.salarioAnualTotal; // salario anual total do convenio (inclúe pagas e lineal)
+  // Bases suxeitas a cotización e IRPF (simplificación: usamos devengosTotais)
+  const baseCC = baseMensualEstim;
+  const baseATEP = baseMensualEstim;
+  const baseIRPF = baseMensualEstim;
+
+  // Deduccións traballador
+  const tipoIRPF = parseFloat(document.getElementById('irpf').value || '0')/100;
+  const ccTraballador = baseCC * 0.047; // 4,70%
+  const desemprego = baseATEP * 0.0155; // 1,55%
+  const formacion = baseATEP * 0.001; // 0,10%
+  const irpfImporte = baseIRPF * tipoIRPF;
+  const totalDeduccions = ccTraballador + desemprego + formacion + irpfImporte;
+
+  // Aportación empresa (cotización empresa) — cálculo orientativo (empresario paga máis: contingencias, desempleo, FOGASA, formación)
+  const empresaContingencias = baseCC * 0.2375; // exemplo aproximado 23.75% (varía por concepto)
+  const empresaDesemprego = baseATEP * 0.057; // exemplo 5.7%
+  const empresaFormacion = baseATEP * 0.006; // exemplo 0.6%
+  const totalAportacionEmpresa = empresaContingencias + empresaDesemprego + empresaFormacion;
+
+  const liquido = devengosTotais - totalDeduccions;
+
+  // Mostrar resumo (incluíndo pagas extra sempre informadas)
+  const totalPagasExtra = dados.t.pagaVeran + dados.t.pagaNadal + dados.t.pagaMarzo;
+
+  resumoDevengos.innerHTML = `
+    <h3>Devengos</h3>
+    <p>Salario mensual (salario base / 12): <strong>${sal.salarioMensual.toFixed(2)} €</strong></p>
+    <p>Complemento lineal mensual: <strong>${sal.linealMensual.toFixed(2)} €</strong></p>
+    <p>Prorrata mensual (se aplicable): <strong>${sal.prorrata.toFixed(2)} €</strong></p>
+    <p>Complemento SMI mensual (nivel 19 se procede): <strong>${sal.smiMensual.toFixed(2)} €</strong></p>
+    <p>Nocturnidade: <strong>${noct.toFixed(2)} €</strong></p>
+    <p>Horas extra (laborables): <strong>${hex.hexNormais.toFixed(2)} €</strong></p>
+    <p>Horas extra (festivas): <strong>${hex.hexFestivas.toFixed(2)} €</strong></p>
+    <p>Prestación IT (se procede): <strong>${it.devengoIT.toFixed(2)} €</strong> (SS: ${it.prestacionSS.toFixed(2)} €, complemento empresa: ${it.complementoEmpresa.toFixed(2)} €)</p>
+    <p><strong>Total devengos (mes): ${devengosTotais.toFixed(2)} €</strong></p>
+    <hr>
+    <p>Pagas extra anuais (verán + Nadal + marzo): <strong>${totalPagasExtra.toFixed(2)} €</strong></p>
+    <p>Nota: as pagas extra móstranse sempre no resumo aínda que non estean prorrateadas.</p>
+    <p>Valor hora ordinaria (segundo convenio e horas anuais): <strong>${dados.valorHora.toFixed(4)} €/h</strong></p>
+    <p>Horas anuais usadas para cálculo: <strong>${dados.horasAno}</strong></p>
+  `;
+
+  resumoBases.innerHTML = `
+    <h3>Bases de cotización e recadación</h3>
+    <p>Base mensual estimada (devengos do mes): <strong>${baseMensualEstim.toFixed(2)} €</strong></p>
+    <p>Base anual convenio (salario anual total, inclúe pagas e lineal): <strong>${baseAnualConvenio.toFixed(2)} €</strong></p>
+    <p>Base suxeita a cotización CC (mensual estimada): <strong>${baseCC.toFixed(2)} €</strong></p>
+    <p>Base suxeita a cotización AT/EP (mensual estimada): <strong>${baseATEP.toFixed(2)} €</strong></p>
+    <p>Base suxeita a retención IRPF (mensual estimada): <strong>${baseIRPF.toFixed(2)} €</strong></p>
+    <p>Aportación aproximada da empresa (cotizacións empresariais): <strong>${totalAportacionEmpresa.toFixed(2)} €</strong></p>
+  `;
+
+  resumoDeduccions.innerHTML = `
+    <h3>Deduccións (traballador)</h3>
+    <p>Continxencias comúns (4,70%): <strong>${ccTraballador.toFixed(2)} €</strong></p>
+    <p>Desemprego (1,55%): <strong>${desemprego.toFixed(2)} €</strong></p>
+    <p>Formación profesional (0,10%): <strong>${formacion.toFixed(2)} €</strong></p>
+    <p>IRPF (${(tipoIRPF*100).toFixed(1)}%): <strong>${irpfImporte.toFixed(2)} €</strong></p>
+    <p><strong>Total deduccións: ${totalDeduccions.toFixed(2)} €</strong></p>
+  `;
+
+  resumoLiquido.innerHTML = `
+    <h3>Líquido a percibir</h3>
+    <p><strong>${liquido.toFixed(2)} €</strong></p>
+    <p class="info">Este resumo é orientativo. As cotizacións empresariais mostradas son aproximadas e poden variar segundo códigos de conta e situacións concretas.</p>
+  `;
+
+  // mostrar pantalla resumo
+  showScreen('4');
+}
+
+/* ---------- IMPRESIÓN / PDF ---------- */
+document.getElementById('imprimir').addEventListener('click',()=>{
+  // abrimos diálogo de impresión; o usuario pode gardar como PDF
+  window.print();
+});
+
+/* ---------- GLOSARIO INTERACTIVO ---------- */
+const glosarioTermos = {
+  mes:{titulo:'Mes da nómina',texto:'Mes ao que corresponde a nómina. Ex.: nómina de abril corresponde ás percepcións dese mes, aínda que o pago poida ser posterior.'},
+  ano:{titulo:'Ano da nómina',texto:'Ano natural ao que pertence a nómina. Para 2026 en diante usarase como referencia as táboas de 2025 se non hai novo convenio.'},
+  nivel:{titulo:'Nivel salarial',texto:'Nivel retributivo segundo o convenio estatal de Artes Gráficas. Determina salario base, pagas e complementos.'},
+  ingreso:{titulo:'Data de ingreso',texto:'Data na que a persoa comezou a traballar na empresa. Debe introducirse en formato dd/mm/aaaa e non pode ser anterior a 12/2013.'},
+  nocturnidade:{titulo:'Nocturnidade',texto:'Complemento por traballar en horario nocturno. Pode pagarse por hora segundo táboas do convenio; hai tarifas distintas para días laborables e festivos.'},
+  horas_extra:{titulo:'Horas extra',texto:'Horas traballadas fóra da xornada ordinaria. Segundo criterio aplicado: horas extra en xornada normal pagan ao valor hora; en festivo pagan 150%.'},
+  it:{titulo:'Incapacidade Temporal (IT)',texto:'Situación de baixa por enfermidade común, accidente non laboral ou AT/EP. A prestación calcúlase sobre a base reguladora diaria (BRD).'}
+};
+document.querySelectorAll('.term').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const key = el.dataset.term;
+    const info = glosarioTermos[key];
+    if (!info) return;
+    document.getElementById('modalTitle').textContent = info.titulo;
+    document.getElementById('modalBody').innerHTML = `<p>${info.texto}</p>`;
+    openModal();
+  });
+});
+function openModal(){ const m=document.getElementById('modal'); m.style.display='flex'; m.setAttribute('aria-hidden','false'); }
+function closeModal(){ const m=document.getElementById('modal'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }
+document.getElementById('modalClose').addEventListener('click',closeModal);
+document.getElementById('modal').addEventListener('click',(e)=>{ if (e.target.id==='modal') closeModal(); });
+
+/* ---------- LÓXICA PARA IR Á PANTALLA IT SÓ SE É NECESARIO ---------- */
+document.getElementById('btn-to-it').addEventListener('click',()=>{
+  // se non hai ningunha incidencia marcada, saltar ao resumo
+  const incNoite = document.getElementById('incNoite').checked;
+  const incHex = document.getElementById('incHex').checked;
+  const incIT = document.getElementById('incIT').checked;
+  if (!incNoite && !incHex && !incIT){
+    showScreen('4'); calcularResumo(); return;
+  }
+  // se incIT está marcada, ir a pantalla 3; se non, ir a pantalla 4
+  if (incIT) { showScreen('3'); } else { showScreen('4'); calcularResumo(); }
+});
+
+/* ---------- INICIALIZAÇÃO toggleIncidencias e evitar "Faltan datos" innecesario ---------- */
+toggleIncidencias();
+
+/* ---------- Mensaxe curta do BOE (cita breve das táboas) ---------- */
+/* Incluímos unha liña informativa no glosario para lembrar a fonte oficial */
+const gl = document.getElementById('glosario');
+gl.innerHTML += `<p class="info">Táboas salariais oficiais extraídas do BOE (Convenio Artes Gráficas 2023‑2025).</p>`;
+
+/* ---------- Evitar comportamento por defecto en impresión para mellor formato ---------- */
+window.onafterprint = function(){ /* nada por agora */ };
+
 </script>
-
 </body>
 </html>
