@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-    /* ---------- ESTILO XERAL ---------- */
     body {
         margin: 0;
         padding: 0;
@@ -14,7 +13,6 @@
         background: #f3f8f4;
         color: #1f3b2c;
     }
-
     #wizard {
         position: relative;
         width: 100%;
@@ -25,7 +23,6 @@
         background: #ffffff;
         box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
-
     .screen {
         position: absolute;
         top: 100%;
@@ -38,33 +35,24 @@
         background: #ffffff;
         transition: top 0.4s ease;
     }
-
-    .screen.active {
-        top: 0;
-    }
-
-    .screen.up {
-        top: -100%;
-    }
+    .screen.active { top: 0; }
+    .screen.up { top: -100%; }
 
     h2 {
         margin-top: 0;
         font-size: 1.6rem;
         color: #1f3b2c;
     }
-
     h3 {
         margin-top: 25px;
         font-size: 1.2rem;
         color: #2d5c42;
     }
-
     label {
         display: block;
         margin-top: 15px;
         font-weight: 600;
     }
-
     input[type="number"],
     input[type="date"],
     select {
@@ -77,13 +65,11 @@
         font-size: 1rem;
         box-sizing: border-box;
     }
-
     input[type="checkbox"],
     input[type="radio"] {
         transform: scale(1.2);
         margin-right: 8px;
     }
-
     button {
         width: 100%;
         padding: 14px;
@@ -94,21 +80,9 @@
         font-weight: 600;
         cursor: pointer;
     }
-
-    .next {
-        background: #4caf50;
-        color: white;
-    }
-
-    .back {
-        background: #d9e8dd;
-        color: #1f3b2c;
-    }
-
-    .finish {
-        background: #2e7d32;
-        color: white;
-    }
+    .next { background: #4caf50; color: white; }
+    .back { background: #d9e8dd; color: #1f3b2c; }
+    .finish { background: #2e7d32; color: white; }
 
     #resumoDevengos,
     #resumoBases,
@@ -120,14 +94,12 @@
         margin-top: 15px;
         border: 1px solid #cfe3d6;
     }
-
     #glosario {
         background: #f3f8f4;
         padding: 15px;
         border-radius: 10px;
         border: 1px solid #cfe3d6;
     }
-
     p.info {
         font-size: 0.9rem;
         color: #486854;
@@ -185,12 +157,6 @@
         <input type="number" id="hexLab">
         <label>Horas extra festivas</label>
         <input type="number" id="hexFest">
-        <label>Categoría horas extra</label>
-        <select id="categoriaHex">
-            <option value="">Selecciona</option>
-            <option value="normal">Normal</option>
-            <option value="especial">Especial</option>
-        </select>
         <label><input type="checkbox" id="hexNocturnas"> Horas extra nocturnas</label>
 
         <h3>Incapacidade Temporal</h3>
@@ -257,7 +223,7 @@
     </section>
 
 
-    <!-- PANTALLA 5 — GLOSARIO (aquí só deixo o contedor, poderemos enchelo con máis detalle despois) -->
+    <!-- PANTALLA 5 — GLOSARIO -->
     <section class="screen" id="screen-5">
         <h2>Glosario de termos</h2>
         <div id="glosario">
@@ -276,19 +242,66 @@
 </div>
 
 <script>
-/* ---------- INICIALIZACIÓN BÁSICA ---------- */
+/* ---------- TÁBOAS SALARIAIS (2025) ---------- */
+/* Podes engadir 2023 e 2024 co mesmo formato se queres afinar máis. */
+
+const tablas = {
+    2025: {
+        1:  { salarioBase: 26582.31, pagaVeran: 2184.85, pagaNadal: 2184.85, pagaMarzo: 2476.16, lineal: 5196.31, smi: 0.00 },
+        2:  { salarioBase: 21129.53, pagaVeran: 1736.67, pagaNadal: 1736.67, pagaMarzo: 1968.23, lineal: 5196.31, smi: 0.00 },
+        3:  { salarioBase: 20447.94, pagaVeran: 1680.65, pagaNadal: 1680.65, pagaMarzo: 1904.74, lineal: 5196.31, smi: 0.00 },
+        4:  { salarioBase: 19084.73, pagaVeran: 1568.61, pagaNadal: 1568.61, pagaMarzo: 1777.76, lineal: 5196.31, smi: 0.00 },
+        5:  { salarioBase: 17721.55, pagaVeran: 1456.57, pagaNadal: 1456.57, pagaMarzo: 1650.77, lineal: 5196.31, smi: 0.00 },
+        6:  { salarioBase: 16358.35, pagaVeran: 1344.52, pagaNadal: 1344.52, pagaMarzo: 1523.79, lineal: 5196.31, smi: 0.00 },
+        7:  { salarioBase: 15676.78, pagaVeran: 1288.50, pagaNadal: 1288.50, pagaMarzo: 1460.30, lineal: 5196.31, smi: 0.00 },
+        8:  { salarioBase: 14995.15, pagaVeran: 1232.48, pagaNadal: 1232.48, pagaMarzo: 1396.81, lineal: 5196.31, smi: 0.00 },
+        9:  { salarioBase: 14313.57, pagaVeran: 1176.46, pagaNadal: 1176.46, pagaMarzo: 1333.32, lineal: 5196.31, smi: 0.00 },
+        10: { salarioBase: 13631.97, pagaVeran: 1120.44, pagaNadal: 1120.44, pagaMarzo: 1269.83, lineal: 5196.31, smi: 0.00 },
+        11: { salarioBase: 12950.37, pagaVeran: 1064.41, pagaNadal: 1064.41, pagaMarzo: 1206.34, lineal: 5196.31, smi: 0.00 },
+        12: { salarioBase: 12268.77, pagaVeran: 1008.39, pagaNadal: 1008.39, pagaMarzo: 1142.84, lineal: 5196.31, smi: 0.00 },
+        13: { salarioBase: 11587.16, pagaVeran: 952.37, pagaNadal: 952.37, pagaMarzo: 1079.35, lineal: 5196.31, smi: 0.00 },
+        14: { salarioBase: 11110.06, pagaVeran: 913.16, pagaNadal: 913.16, pagaMarzo: 1034.91, lineal: 5196.31, smi: 0.00 },
+        15: { salarioBase: 10564.77, pagaVeran: 868.34, pagaNadal: 868.34, pagaMarzo: 984.12,  lineal: 5196.31, smi: 0.00 },
+        16: { salarioBase: 10019.49, pagaVeran: 823.52, pagaNadal: 823.52, pagaMarzo: 933.32,  lineal: 5196.31, smi: 0.00 },
+        17: { salarioBase: 9542.38,  pagaVeran: 784.31, pagaNadal: 784.31, pagaMarzo: 888.88,  lineal: 5196.31, smi: 0.00 },
+        18: { salarioBase: 9133.42,  pagaVeran: 750.69, pagaNadal: 750.69, pagaMarzo: 850.78,  lineal: 5196.31, smi: 0.00 },
+        19: { salarioBase: 8724.45,  pagaVeran: 717.08, pagaNadal: 717.08, pagaMarzo: 812.69,  lineal: 5196.31, smi: 408.39 }
+    }
+};
+
+/* Nocturnidade 2025 */
+const nocturnaNormal = {
+    1:4.53, 2:3.60, 3:3.49, 4:3.25, 5:3.02, 6:2.79, 7:2.67, 8:2.56,
+    9:2.44, 10:2.32, 11:2.21, 12:2.09, 13:1.98, 14:1.89, 15:1.80,
+    16:1.71, 17:1.63, 18:1.56, 19:1.49
+};
+const nocturnaFestiva = {
+    1:5.29, 2:4.20, 3:4.07, 4:3.80, 5:3.52, 6:3.25, 7:3.12, 8:2.98,
+    9:2.85, 10:2.71, 11:2.58, 12:2.44, 13:2.30, 14:2.21, 15:2.10,
+    16:1.99, 17:1.90, 18:1.82, 19:1.73
+};
+
+/* ---------- FUNCIÓNS AUXILIARES ---------- */
+
+function anoReferencia(ano) {
+    if (ano >= 2026) return 2025;
+    return ano;
+}
+
+function horasAnuais(ano) {
+    return ano >= 2025 ? 1760 : 1768;
+}
+
+/* ---------- INICIALIZACIÓN ---------- */
 
 const screens = document.querySelectorAll('.screen');
 
 function showScreen(id) {
-    screens.forEach(s => {
-        s.classList.remove('active', 'up');
-    });
+    screens.forEach(s => s.classList.remove('active','up'));
     const target = document.getElementById('screen-' + id);
     target.classList.add('active');
 }
 
-/* Meses e anos */
 (function initMesAnoNivel() {
     const mesSelect = document.getElementById('mes');
     const anoSelect = document.getElementById('ano');
@@ -327,7 +340,6 @@ document.querySelectorAll('.next').forEach(btn => {
     btn.addEventListener('click', () => {
         const nextId = btn.getAttribute('data-next');
 
-        // Se pasa da pantalla 2 á 3 e non hai IT, saltamos directamente á 4
         if (nextId === '3') {
             const haiIT = document.getElementById('haiIT').checked;
             if (!haiIT) {
@@ -338,7 +350,6 @@ document.querySelectorAll('.next').forEach(btn => {
         }
 
         if (nextId === '4') {
-            // Antes de ir ao resumo, calculamos
             calcularResumo();
         }
 
@@ -353,7 +364,7 @@ document.querySelectorAll('.back').forEach(btn => {
     });
 });
 
-/* ---------- CÁLCULO BRD A PARTIR DA BASE ANTERIOR ---------- */
+/* ---------- BRD ---------- */
 
 const baseAnteriorInput = document.getElementById('baseAnterior');
 const brdMostrada = document.getElementById('brdMostrada');
@@ -370,7 +381,32 @@ baseAnteriorInput.addEventListener('input', () => {
     }
 });
 
-/* ---------- CÁLCULO IT POR TRAMOS ---------- */
+/* ---------- VALOR HORA E HORAS EXTRA ---------- */
+
+function obterDatosNivelAno() {
+    const ano = parseInt(document.getElementById('ano').value || '0');
+    const nivel = parseInt(document.getElementById('nivel').value || '0');
+    if (!ano || !nivel) return null;
+
+    const ref = anoReferencia(ano);
+    const t = tablas[ref] && tablas[ref][nivel];
+    if (!t) return null;
+
+    const salarioAnualTotal =
+        t.salarioBase +
+        t.pagaVeran +
+        t.pagaNadal +
+        t.pagaMarzo +
+        t.lineal +
+        t.smi;
+
+    const horasAno = horasAnuais(ref);
+    const valorHora = salarioAnualTotal / horasAno;
+
+    return { ano, ref, nivel, t, salarioAnualTotal, horasAno, valorHora };
+}
+
+/* ---------- IT ---------- */
 
 function calcularIT() {
     const haiIT = document.getElementById('haiIT').checked;
@@ -399,7 +435,7 @@ function calcularIT() {
 
     if (tramo === '1-3') {
         porcentaxeSS = 0;
-        porcentaxeFinal = 0; // non complementamos enfermidade común
+        porcentaxeFinal = 0;
     } else if (tramo === '4-20') {
         porcentaxeSS = 0.60;
         porcentaxeFinal = 0.60;
@@ -410,9 +446,7 @@ function calcularIT() {
         porcentaxeSS = 0.75;
         porcentaxeFinal = 0.75;
         const hosp = document.getElementById('hospitalizacion').checked;
-        if (hosp) {
-            porcentaxeFinal = 1.0; // se o convenio mellora ata 100% en hospitalización
-        }
+        if (hosp) porcentaxeFinal = 1.0;
     }
 
     const prestacionSS = brdCalculada * diasMesIT * porcentaxeSS;
@@ -426,7 +460,82 @@ function calcularIT() {
     };
 }
 
-/* ---------- CÁLCULO RESUMO (VERSIÓN SIMPLE, CENTRADA EN IT) ---------- */
+/* ---------- NOCTURNIDADE ---------- */
+
+function calcularNocturnidade(dados) {
+    if (!dados) return 0;
+
+    const nivel = dados.nivel;
+    const prezoNoiteNormal = nocturnaNormal[nivel] || 0;
+    const prezoNoiteFestiva = nocturnaFestiva[nivel] || 0;
+
+    const noiteCompleta = document.getElementById('noiteCompleta').checked;
+    const diasNoite = parseFloat(document.getElementById('diasNoite').value || '0');
+    const horasNoiteLab = parseFloat(document.getElementById('horasNoiteLab').value || '0');
+    const horasNoiteFest = parseFloat(document.getElementById('horasNoiteFest').value || '0');
+
+    let horasNocturnasLab = horasNoiteLab;
+    let horasNocturnasFest = horasNoiteFest;
+
+    if (noiteCompleta) {
+        const horasDia = 8;
+        horasNocturnasLab += diasNoite * horasDia;
+    }
+
+    const importeNoctLab = horasNocturnasLab * prezoNoiteNormal;
+    const importeNoctFest = horasNocturnasFest * prezoNoiteFestiva;
+
+    return importeNoctLab + importeNoctFest;
+}
+
+/* ---------- HORAS EXTRA ---------- */
+
+function calcularHorasExtra(dados) {
+    if (!dados) return { hexNormais: 0, hexFestivas: 0, total: 0 };
+
+    const valorHora = dados.valorHora;
+    const hexLab = parseFloat(document.getElementById('hexLab').value || '0');
+    const hexFest = parseFloat(document.getElementById('hexFest').value || '0');
+
+    const importeHexNormais = hexLab * valorHora;
+    const importeHexFestivas = hexFest * valorHora * 1.5;
+
+    return {
+        hexNormais: importeHexNormais,
+        hexFestivas: importeHexFestivas,
+        total: importeHexNormais + importeHexFestivas
+    };
+}
+
+/* ---------- SALARIO BASE + PRORRATA + LINEAL ---------- */
+
+function calcularSalarioBase(dados) {
+    if (!dados) return { salarioMensual: 0, prorrata: 0, linealMensual: 0, smiMensual: 0, total: 0 };
+
+    const t = dados.t;
+    const prorrata = document.getElementById('prorrata').checked;
+
+    const salarioMensual = t.salarioBase / 12;
+    const linealMensual = t.lineal / 12;
+    const smiMensual = t.smi / 12;
+
+    let prorrataMensual = 0;
+    if (prorrata) {
+        prorrataMensual = (t.pagaVeran + t.pagaNadal + t.pagaMarzo) / 12;
+    }
+
+    const total = salarioMensual + linealMensual + smiMensual + prorrataMensual;
+
+    return {
+        salarioMensual,
+        prorrata: prorrataMensual,
+        linealMensual,
+        smiMensual,
+        total
+    };
+}
+
+/* ---------- RESUMO ---------- */
 
 function calcularResumo() {
     const resumoDevengos = document.getElementById('resumoDevengos');
@@ -434,18 +543,26 @@ function calcularResumo() {
     const resumoDeduccions = document.getElementById('resumoDeduccions');
     const resumoLiquido = document.getElementById('resumoLiquido');
 
-    // Aquí, de momento, imos centrarnos en IT e deixar o resto como esqueleto.
+    const dados = obterDatosNivelAno();
+    if (!dados) {
+        resumoDevengos.innerHTML = '<p>Faltan datos de ano ou nivel.</p>';
+        resumoBases.innerHTML = '';
+        resumoDeduccions.innerHTML = '';
+        resumoLiquido.innerHTML = '';
+        return;
+    }
+
     const it = calcularIT();
+    const noct = calcularNocturnidade(dados);
+    const hex = calcularHorasExtra(dados);
+    const sal = calcularSalarioBase(dados);
 
-    // Devengos (por agora só IT; máis adiante poderemos sumar salario base, nocturnidade, etc.)
-    const totalDevengos = it.devengoIT;
+    const devengosTotais = sal.total + noct + hex.total + it.devengoIT;
 
-    // Bases: simplificamos asumindo que todo o devengo IT cotiza como CC e AT/EP
-    const baseCC = totalDevengos;
-    const baseATEP = totalDevengos;
-    const baseIRPF = totalDevengos;
+    const baseCC = devengosTotais;
+    const baseATEP = devengosTotais;
+    const baseIRPF = devengosTotais;
 
-    // Deduccións
     const tipoIRPF = parseFloat(document.getElementById('irpf').value || '0') / 100;
     const ccTraballador = baseCC * 0.047;
     const desemprego = baseATEP * 0.0155;
@@ -453,15 +570,23 @@ function calcularResumo() {
     const irpfImporte = baseIRPF * tipoIRPF;
 
     const totalDeduccions = ccTraballador + desemprego + formacion + irpfImporte;
-
-    const liquido = totalDevengos - totalDeduccions;
+    const liquido = devengosTotais - totalDeduccions;
 
     resumoDevengos.innerHTML = `
         <h3>Devengos</h3>
-        <p>Prestación IT total: ${it.devengoIT.toFixed(2)} €</p>
-        <p>Prestación SS incluída nese importe: ${it.prestacionSS.toFixed(2)} €</p>
-        <p>Complemento empresa (se procede): ${it.complementoEmpresa.toFixed(2)} €</p>
-        <p><strong>Total devengos: ${totalDevengos.toFixed(2)} €</strong></p>
+        <p>Salario mensual: ${sal.salarioMensual.toFixed(2)} €</p>
+        <p>Complemento lineal mensual: ${sal.linealMensual.toFixed(2)} €</p>
+        <p>Prorrata pagas extra: ${sal.prorrata.toFixed(2)} €</p>
+        <p>Complemento SMI mensual: ${sal.smiMensual.toFixed(2)} €</p>
+        <p>Nocturnidade: ${noct.toFixed(2)} €</p>
+        <p>Horas extra laborables: ${hex.hexNormais.toFixed(2)} €</p>
+        <p>Horas extra festivas: ${hex.hexFestivas.toFixed(2)} €</p>
+        <p>Prestación IT total: ${it.devengoIT.toFixed(2)} € (SS: ${it.prestacionSS.toFixed(2)} €, complemento: ${it.complementoEmpresa.toFixed(2)} €)</p>
+        <p><strong>Total devengos: ${devengosTotais.toFixed(2)} €</strong></p>
+        <hr>
+        <p>Valor hora ordinaria: ${dados.valorHora.toFixed(4)} €/h</p>
+        <p>Valor hora extra normal: ${dados.valorHora.toFixed(4)} €/h</p>
+        <p>Valor hora extra festiva: ${(dados.valorHora * 1.5).toFixed(4)} €/h</p>
     `;
 
     resumoBases.innerHTML = `
@@ -486,12 +611,11 @@ function calcularResumo() {
     `;
 }
 
-/* ---------- BOTÓN FINALIZAR ---------- */
+/* ---------- FINALIZAR ---------- */
 
 document.querySelector('.finish').addEventListener('click', () => {
     alert('Cálculo rematado. Revisa o resumo da nómina.');
 });
-
 </script>
 
 </body>
