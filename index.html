@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calculadora Nómina Vicusgraf</title>
+<title>Calculadora Nómina Vicusgraf — Nocturnidade corrixida</title>
 <style>
-/* ---------- ESTILO XERAL ---------- */
 :root{
   --bg:#f3f8f4;
   --verde-esc:#1f3b2c;
@@ -28,6 +27,7 @@ label{display:block;margin-top:12px;font-weight:600;}
 .field-row{display:flex;gap:10px;align-items:center;}
 .field-row .col{flex:1;}
 input[type="text"], input[type="number"], select {width:100%;padding:10px;border-radius:10px;border:1px solid #b7d2c0;background:#f7fbf8;font-size:1rem;box-sizing:border-box;}
+input[readonly]{background:#f0f6f0;}
 .small{font-size:.9rem;padding:8px;}
 .checkbox-inline{display:flex;align-items:center;gap:8px;margin-top:10px;}
 button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight:700;cursor:pointer;font-size:1rem;}
@@ -79,8 +79,8 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
       </select>
 
       <label>Data de ingreso na empresa (dd/mm/aaaa) <span class="term" data-term="ingreso">[?]</span></label>
-      <input type="text" id="dataIngreso" placeholder="dd/mm/aaaa" aria-describedby="ingroHelp">
-      <p id="ingroHelp" class="info">Non se aceptan datas anteriores a 12/2013. Podes escribir a data manualmente no móbil ou no PC.</p>
+      <input type="text" id="dataIngreso" placeholder="dd/mm/aaaa" inputmode="numeric" aria-describedby="ingroHelp">
+      <p id="ingroHelp" class="info">Non se aceptan datas anteriores a 12/2013. Podes escribir a data manualmente no móbil ou no PC; os separadores "/" engádense automaticamente.</p>
 
       <label>% IRPF aplicado</label>
       <input type="number" id="irpf" step="0.1" placeholder="Ex.: 15">
@@ -93,7 +93,7 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
       </div>
     </section>
 
-    <!-- PANTALLA 2 — INCIDENCIAS (primeira ventá con checkboxes) -->
+    <!-- PANTALLA 2 — INCIDENCIAS -->
     <section class="screen" id="screen-2" aria-labelledby="s2title">
       <h2 id="s2title">Incidencias do mes</h2>
 
@@ -126,7 +126,7 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
         <p class="info">As horas extra en xornada normal pagan ao valor da hora ordinaria; en festivo pagan 150%.</p>
       </div>
 
-      <!-- BLOQUE IT (resumo breve; datos completos na pantalla 3 se se marca) -->
+      <!-- BLOQUE IT -->
       <div id="bloqueIT" style="display:none;margin-top:12px;">
         <h3>Incapacidade Temporal (IT) <span class="term" data-term="it">[?]</span></h3>
         <label class="checkbox-inline"><input type="checkbox" id="haiIT"> Hai baixa por IT este mes</label>
@@ -139,7 +139,7 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
       </div>
     </section>
 
-    <!-- PANTALLA 3 — IT (só se incIT/haiIT) -->
+    <!-- PANTALLA 3 — IT -->
     <section class="screen" id="screen-3" aria-labelledby="s3title">
       <h2 id="s3title">Incapacidade Temporal (IT)</h2>
 
@@ -217,7 +217,6 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
 
 <script>
 /* ---------- DATOS DO CONVENIO 2023 / 2024 / 2025 ---------- */
-/* 2023 (extracto das táboas achegadas) */
 const tablas = {
   2023: {
     1:{salarioBase:24995.71,pagaVeran:2054.44,pagaNadal:2054.44,pagaMarzo:2328.37,lineal:4886.16,smi:0},
@@ -284,7 +283,7 @@ const tablas = {
   }
 };
 
-/* Nocturnidade por ano (2023/2024/2025) — usamos as táboas achegadas */
+/* Nocturnidade por ano (2023/2024/2025) */
 const nocturnidad = {
   2023: {
     normal:{1:4.24,2:3.37,3:3.26,4:3.05,5:2.83,6:2.61,7:2.50,8:2.39,9:2.28,10:2.18,11:2.07,12:1.96,13:1.85,14:1.77,15:1.69,16:1.60,17:1.52,18:1.46,19:1.39},
@@ -307,7 +306,6 @@ function anoReferencia(ano){
   return ano;
 }
 function horasAnuais(ano){
-  // ata 2024: 1768; desde 2025: 1760
   return (ano >= 2025) ? 1760 : 1768;
 }
 
@@ -336,13 +334,11 @@ document.querySelectorAll('.next').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const next = btn.getAttribute('data-next');
     if (next==='3'){
-      // se non hai incidencia IT, saltar ao resumo
       const incIT = document.getElementById('incIT').checked;
       const haiIT = document.getElementById('haiIT').checked;
       if (!incIT && !haiIT){
         showScreen('4'); calcularResumo(); return;
       }
-      // se incIT marcado pero non hai "haiIT" na pantalla 2, we'll still go to IT screen to fill details
     }
     if (next==='4'){ calcularResumo(); }
     showScreen(next);
@@ -356,17 +352,17 @@ document.querySelectorAll('.back').forEach(btn=>{
   });
 });
 document.getElementById('btn-reset').addEventListener('click',()=>{
-  // reset basic fields
   document.getElementById('mes').value='';
   document.getElementById('ano').value='';
   document.getElementById('nivel').value='';
   document.getElementById('dataIngreso').value='';
   document.getElementById('irpf').value='';
   document.getElementById('prorrata').checked=false;
-  // incidencias
   ['incNoite','incHex','incIT','noiteCompleta','hexNocturnas','haiIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
   ['diasNoite','horasNoiteLab','horasNoiteFest','hexLab','hexFest','baseAnterior','diasMesIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   toggleIncidencias();
+  // aseguramos que o campo diasNoite estea habilitado
+  document.getElementById('diasNoite').disabled = false;
   showScreen('1');
 });
 
@@ -378,22 +374,86 @@ function toggleIncidencias(){
 }
 ['incNoite','incHex','incIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('change',toggleIncidencias); });
 
-/* ---------- DATA INGRESO VALIDACIÓN ---------- */
-function parseDataIngreso(){
+/* ---------- AUTOFORMATADO DO CAMPO DATA (engade "/" automaticamente) ---------- */
+(function enableAutoDateInput(){
+  const input = document.getElementById('dataIngreso');
+
+  function cleanDigits(s){
+    return (s||'').replace(/\D/g,'').slice(0,8);
+  }
+
+  function formatDateValue(raw){
+    const d = cleanDigits(raw);
+    if (d.length <= 2) return d;
+    if (d.length <= 4) return d.slice(0,2) + '/' + d.slice(2);
+    return d.slice(0,2) + '/' + d.slice(2,4) + '/' + d.slice(4);
+  }
+
+  input.addEventListener('input', () => {
+    const formatted = formatDateValue(input.value);
+    input.value = formatted;
+  });
+
+  input.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = cleanDigits(text);
+    input.value = formatDateValue(digits);
+  });
+
+  input.addEventListener('blur', () => {
+    const v = cleanDigits(input.value);
+    if (v.length === 6) {
+      const day = v.slice(0,2), month = v.slice(2,4), yy = v.slice(4);
+      const year = parseInt(yy,10);
+      const fullYear = year >= 50 ? 1900 + year : 2000 + year;
+      input.value = `${day}/${month}/${fullYear}`;
+    }
+  });
+})();
+
+/* ---------- CALCULO ANTIGÜIDADE ---------- */
+function calcularAntiguedadeDesdeInput(refDate = new Date()){
   const txt = (document.getElementById('dataIngreso').value || '').trim();
   if (!txt) return null;
   const parts = txt.split('/');
-  if (parts.length!==3) return null;
+  if (parts.length !== 3) return null;
   const d = parseInt(parts[0],10), m = parseInt(parts[1],10), a = parseInt(parts[2],10);
   if (!d || !m || !a) return null;
-  const dt = new Date(a, m-1, d);
-  if (isNaN(dt.getTime())) return null;
-  const min = new Date(2013,11,1); // 1 dec 2013
-  if (dt < min) return null;
-  return dt;
+  const ingreso = new Date(a, m - 1, d);
+  if (isNaN(ingreso.getTime())) return null;
+  const min = new Date(2013,11,1);
+  if (ingreso < min) return null;
+
+  let years = refDate.getFullYear() - ingreso.getFullYear();
+  let months = refDate.getMonth() - ingreso.getMonth();
+  let days = refDate.getDate() - ingreso.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(refDate.getFullYear(), refDate.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  return {
+    years: years,
+    months: months,
+    days: days,
+    toString: function(){
+      const parts = [];
+      if (this.years) parts.push(this.years + ' ano' + (this.years>1?'s':''));
+      if (this.months) parts.push(this.months + ' mes' + (this.months>1?'es':''));
+      if (this.days) parts.push(this.days + ' día' + (this.days>1?'s':''));
+      return parts.length ? parts.join(', ') : '0 días';
+    }
+  };
 }
 
-/* ---------- BRD (base reguladora diaria) ---------- */
+/* ---------- BRD ---------- */
 const baseAnteriorInput = document.getElementById('baseAnterior');
 const brdMostrada = document.getElementById('brdMostrada');
 let brdCalculada = 0;
@@ -410,7 +470,6 @@ function obterDatosNivelAno(){
   if (!anoSel || !nivelSel) return null;
   const ref = anoReferencia(anoSel);
   if (!ref) return null;
-  // se non hai táboas para ese ano, usamos 2025 como referencia (requisito)
   const refUse = (ref >= 2026) ? 2025 : ref;
   const tAno = tablas[refUse];
   if (!tAno) return null;
@@ -419,30 +478,62 @@ function obterDatosNivelAno(){
   const salarioAnualTotal = t.salarioBase + t.pagaVeran + t.pagaNadal + t.pagaMarzo + t.lineal + t.smi;
   const horasAno = horasAnuais(refUse);
   const valorHora = salarioAnualTotal / horasAno;
-  // nocturnidade por ano
   const noct = nocturnidad[refUse] || nocturnidad[2025];
   return { anoSel, refUse, nivelSel, t, salarioAnualTotal, horasAno, valorHora, noct };
 }
 
-/* ---------- CÁLCULO NOCTURNIDADE ---------- */
+/* ---------- CÁLCULO NOCTURNIDADE (CORRIXIDA) ---------- */
 function calcularNocturnidade(dados){
   if (!dados) return 0;
+
   const nivel = dados.nivelSel;
   const prezoNoiteNormal = (dados.noct && dados.noct.normal && dados.noct.normal[nivel]) ? dados.noct.normal[nivel] : 0;
   const prezoNoiteFestiva = (dados.noct && dados.noct.festiva && dados.noct.festiva[nivel]) ? dados.noct.festiva[nivel] : 0;
+
   const noiteCompleta = document.getElementById('noiteCompleta').checked;
-  const diasNoite = parseFloat(document.getElementById('diasNoite').value || '0');
+  let diasNoite = parseFloat(document.getElementById('diasNoite').value || '0');
   const horasNoiteLab = parseFloat(document.getElementById('horasNoiteLab').value || '0');
   const horasNoiteFest = parseFloat(document.getElementById('horasNoiteFest').value || '0');
-  let horasNocturnasLab = horasNoiteLab;
-  let horasNocturnasFest = horasNoiteFest;
-  if (noiteCompleta && diasNoite>0){
-    const horasDia = 8;
-    horasNocturnasLab += diasNoite * horasDia;
+
+  // Se marca "mes completo en noite" e non se especifican días, asumimos 30 días
+  if (noiteCompleta) {
+    if (!diasNoite || diasNoite <= 0) {
+      diasNoite = 30; // asumimos mes de 30 días
+    }
   }
+
+  // Convertimos días completos nocturnos a horas (8 horas/día)
+  const HORAS_POR_DIA_NOITE = 8;
+  const horasDesdeDias = diasNoite * HORAS_POR_DIA_NOITE;
+
+  // Horas nocturnas laborables totais = horas desde días + horas laborables adicionais
+  const horasNocturnasLab = horasDesdeDias + (isFinite(horasNoiteLab) ? horasNoiteLab : 0);
+
+  // Horas nocturnas festivas (só as horas festivas introducidas)
+  const horasNocturnasFest = (isFinite(horasNoiteFest) ? horasNoiteFest : 0);
+
   const importeNoctLab = horasNocturnasLab * prezoNoiteNormal;
   const importeNoctFest = horasNocturnasFest * prezoNoiteFestiva;
-  return importeNoctLab + importeNoctFest;
+
+  const totalNocturnidade = importeNoctLab + importeNoctFest;
+
+  return totalNocturnidade;
+}
+
+/* ---------- LÓXICA: cando marque "noiteCompleta" auto-poñer días e bloquear campo ---------- */
+const noiteCheckbox = document.getElementById('noiteCompleta');
+if (noiteCheckbox) {
+  noiteCheckbox.addEventListener('change', () => {
+    const diasField = document.getElementById('diasNoite');
+    if (noiteCheckbox.checked) {
+      diasField.value = 30;
+      diasField.disabled = true;
+    } else {
+      diasField.disabled = false;
+      // non borramos automaticamente o valor se o usuario quere mantelo; deixamos como estaba
+      if (diasField.value == '30') diasField.value = '';
+    }
+  });
 }
 
 /* ---------- HORAS EXTRA ---------- */
@@ -453,7 +544,6 @@ function calcularHorasExtra(dados){
   const hexFest = parseFloat(document.getElementById('hexFest').value || '0');
   const importeHexNormais = hexLab * valorHora;
   const importeHexFestivas = hexFest * valorHora * 1.5;
-  // se son nocturnas, poderiamos aplicar complemento nocturnidade por hora extra; por agora sumamos simple
   return { hexNormais:importeHexNormais, hexFestivas:importeHexFestivas, total:importeHexNormais+importeHexFestivas };
 }
 
@@ -491,16 +581,16 @@ function calcularIT(){
   return { devengoIT:devengoFinal, prestacionSS, complementoEmpresa };
 }
 
-/* ---------- RESUMO FINAL (inclúe bases e deducións) ---------- */
+/* ---------- RESUMO FINAL ---------- */
 function calcularResumo(){
   const resumoDevengos = document.getElementById('resumoDevengos');
   const resumoBases = document.getElementById('resumoBases');
   const resumoDeduccions = document.getElementById('resumoDeduccions');
   const resumoLiquido = document.getElementById('resumoLiquido');
 
-  // validar data ingreso
-  const dataIng = parseDataIngreso();
-  if (!dataIng){
+  // validar data ingreso e calcular antigüidade
+  const antig = calcularAntiguedadeDesdeInput();
+  if (!antig){
     resumoDevengos.innerHTML = '<p style="color:#b33">Revisa a data de ingreso (formato dd/mm/aaaa e non anterior a 12/2013).</p>';
     resumoBases.innerHTML = resumoDeduccions.innerHTML = resumoLiquido.innerHTML = '';
     showScreen('4');
@@ -520,34 +610,28 @@ function calcularResumo(){
   const hex = calcularHorasExtra(dados);
   const it = calcularIT();
 
-  // Devengos: salario mensual (sen prorrata se non marcada) + lineal + prorrata (se marcada) + nocturnidade + horas extra + IT
   const devengosTotais = sal.total + noct + hex.total + it.devengoIT;
 
-  // Bases de cotización: para simplificar mostramos base mensual estimada e base anual (según convenio)
   const baseMensualEstim = devengosTotais;
-  const baseAnualConvenio = dados.salarioAnualTotal; // salario anual total do convenio (inclúe pagas e lineal)
-  // Bases suxeitas a cotización e IRPF (simplificación: usamos devengosTotais)
+  const baseAnualConvenio = dados.salarioAnualTotal;
   const baseCC = baseMensualEstim;
   const baseATEP = baseMensualEstim;
   const baseIRPF = baseMensualEstim;
 
-  // Deduccións traballador
   const tipoIRPF = parseFloat(document.getElementById('irpf').value || '0')/100;
-  const ccTraballador = baseCC * 0.047; // 4,70%
-  const desemprego = baseATEP * 0.0155; // 1,55%
-  const formacion = baseATEP * 0.001; // 0,10%
+  const ccTraballador = baseCC * 0.047;
+  const desemprego = baseATEP * 0.0155;
+  const formacion = baseATEP * 0.001;
   const irpfImporte = baseIRPF * tipoIRPF;
   const totalDeduccions = ccTraballador + desemprego + formacion + irpfImporte;
 
-  // Aportación empresa (cotización empresa) — cálculo orientativo (empresario paga máis: contingencias, desempleo, FOGASA, formación)
-  const empresaContingencias = baseCC * 0.2375; // exemplo aproximado 23.75% (varía por concepto)
-  const empresaDesemprego = baseATEP * 0.057; // exemplo 5.7%
-  const empresaFormacion = baseATEP * 0.006; // exemplo 0.6%
+  const empresaContingencias = baseCC * 0.2375;
+  const empresaDesemprego = baseATEP * 0.057;
+  const empresaFormacion = baseATEP * 0.006;
   const totalAportacionEmpresa = empresaContingencias + empresaDesemprego + empresaFormacion;
 
   const liquido = devengosTotais - totalDeduccions;
 
-  // Mostrar resumo (incluíndo pagas extra sempre informadas)
   const totalPagasExtra = dados.t.pagaVeran + dados.t.pagaNadal + dados.t.pagaMarzo;
 
   resumoDevengos.innerHTML = `
@@ -563,7 +647,7 @@ function calcularResumo(){
     <p><strong>Total devengos (mes): ${devengosTotais.toFixed(2)} €</strong></p>
     <hr>
     <p>Pagas extra anuais (verán + Nadal + marzo): <strong>${totalPagasExtra.toFixed(2)} €</strong></p>
-    <p>Nota: as pagas extra móstranse sempre no resumo aínda que non estean prorrateadas.</p>
+    <p>Antigüidade na empresa: <strong>${antig.toString()}</strong></p>
     <p>Valor hora ordinaria (segundo convenio e horas anuais): <strong>${dados.valorHora.toFixed(4)} €/h</strong></p>
     <p>Horas anuais usadas para cálculo: <strong>${dados.horasAno}</strong></p>
   `;
@@ -593,13 +677,11 @@ function calcularResumo(){
     <p class="info">Este resumo é orientativo. As cotizacións empresariais mostradas son aproximadas e poden variar segundo códigos de conta e situacións concretas.</p>
   `;
 
-  // mostrar pantalla resumo
   showScreen('4');
 }
 
 /* ---------- IMPRESIÓN / PDF ---------- */
 document.getElementById('imprimir').addEventListener('click',()=>{
-  // abrimos diálogo de impresión; o usuario pode gardar como PDF
   window.print();
 });
 
@@ -608,7 +690,7 @@ const glosarioTermos = {
   mes:{titulo:'Mes da nómina',texto:'Mes ao que corresponde a nómina. Ex.: nómina de abril corresponde ás percepcións dese mes, aínda que o pago poida ser posterior.'},
   ano:{titulo:'Ano da nómina',texto:'Ano natural ao que pertence a nómina. Para 2026 en diante usarase como referencia as táboas de 2025 se non hai novo convenio.'},
   nivel:{titulo:'Nivel salarial',texto:'Nivel retributivo segundo o convenio estatal de Artes Gráficas. Determina salario base, pagas e complementos.'},
-  ingreso:{titulo:'Data de ingreso',texto:'Data na que a persoa comezou a traballar na empresa. Debe introducirse en formato dd/mm/aaaa e non pode ser anterior a 12/2013.'},
+  ingreso:{titulo:'Data de ingreso',texto:'Data na que a persoa comezou a traballar na empresa. Debe introducirse en formato dd/mm/aaaa e non pode ser anterior a 12/2013. A partir dela calcúlase a antigüidade.'},
   nocturnidade:{titulo:'Nocturnidade',texto:'Complemento por traballar en horario nocturno. Pode pagarse por hora segundo táboas do convenio; hai tarifas distintas para días laborables e festivos.'},
   horas_extra:{titulo:'Horas extra',texto:'Horas traballadas fóra da xornada ordinaria. Segundo criterio aplicado: horas extra en xornada normal pagan ao valor hora; en festivo pagan 150%.'},
   it:{titulo:'Incapacidade Temporal (IT)',texto:'Situación de baixa por enfermidade común, accidente non laboral ou AT/EP. A prestación calcúlase sobre a base reguladora diaria (BRD).'}
@@ -630,28 +712,21 @@ document.getElementById('modal').addEventListener('click',(e)=>{ if (e.target.id
 
 /* ---------- LÓXICA PARA IR Á PANTALLA IT SÓ SE É NECESARIO ---------- */
 document.getElementById('btn-to-it').addEventListener('click',()=>{
-  // se non hai ningunha incidencia marcada, saltar ao resumo
   const incNoite = document.getElementById('incNoite').checked;
   const incHex = document.getElementById('incHex').checked;
   const incIT = document.getElementById('incIT').checked;
   if (!incNoite && !incHex && !incIT){
     showScreen('4'); calcularResumo(); return;
   }
-  // se incIT está marcada, ir a pantalla 3; se non, ir a pantalla 4
   if (incIT) { showScreen('3'); } else { showScreen('4'); calcularResumo(); }
 });
 
-/* ---------- INICIALIZAÇÃO toggleIncidencias e evitar "Faltan datos" innecesario ---------- */
+/* ---------- Inicial toggle ---------- */
 toggleIncidencias();
 
-/* ---------- Mensaxe curta do BOE (cita breve das táboas) ---------- */
-/* Incluímos unha liña informativa no glosario para lembrar a fonte oficial */
+/* ---------- Nota de fonte no glosario ---------- */
 const gl = document.getElementById('glosario');
 gl.innerHTML += `<p class="info">Táboas salariais oficiais extraídas do BOE (Convenio Artes Gráficas 2023‑2025).</p>`;
-
-/* ---------- Evitar comportamento por defecto en impresión para mellor formato ---------- */
-window.onafterprint = function(){ /* nada por agora */ };
-
 </script>
 </body>
 </html>
