@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calculadora Nómina Vicusgraf — Nocturnidade corrixida</title>
+<title>Calculadora Nómina Vicusgraf — Antigüidade automática (Convenio 7.3.5)</title>
 <style>
 :root{
   --bg:#f3f8f4;
@@ -14,7 +14,7 @@
   --muted:#486854;
 }
 html,body{height:100%;margin:0;font-family: "Segoe UI", Arial, sans-serif;background:var(--bg);color:var(--verde-esc);}
-#wizard{position:relative;width:100%;max-width:720px;margin:12px auto;height:calc(100vh - 24px);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.08);overflow:hidden;border-radius:12px;}
+#wizard{position:relative;width:100%;max-width:920px;margin:12px auto;height:calc(100vh - 24px);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.08);overflow:hidden;border-radius:12px;}
 .header{padding:18px 20px;border-bottom:1px solid #eef6ef;background:linear-gradient(90deg,#f7fbf8, #ffffff);}
 .header h1{margin:0;font-size:1.1rem;color:var(--verde-esc);}
 .container{position:relative;height:calc(100% - 64px);overflow:hidden;}
@@ -44,10 +44,8 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
 .modal .card{background:#fff;padding:18px;border-radius:10px;max-width:720px;width:100%;max-height:80vh;overflow:auto;}
 .close-x{float:right;background:#eee;border-radius:8px;padding:6px;cursor:pointer;}
 .inline-note{font-size:.9rem;color:#666;margin-top:6px;}
-@media (min-width:900px){
-  #wizard{max-width:900px;}
-  .field-row{gap:16px;}
-}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media (max-width:720px){ .grid{grid-template-columns:1fr;} #wizard{height:auto;} }
 </style>
 </head>
 <body>
@@ -63,20 +61,19 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
     <section class="screen active" id="screen-1" aria-labelledby="s1title">
       <h2 id="s1title">Datos xerais da nómina</h2>
 
-      <label>Mes da nómina <span class="term" data-term="mes">[?]</span></label>
-      <select id="mes">
-        <option value="">— Selecciona o mes —</option>
-      </select>
-
-      <label>Ano da nómina <span class="term" data-term="ano">[?]</span></label>
-      <select id="ano">
-        <option value="">— Selecciona o ano —</option>
-      </select>
+      <div class="grid">
+        <div>
+          <label>Mes da nómina <span class="term" data-term="mes">[?]</span></label>
+          <select id="mes"><option value="">— Selecciona o mes —</option></select>
+        </div>
+        <div>
+          <label>Ano da nómina <span class="term" data-term="ano">[?]</span></label>
+          <select id="ano"><option value="">— Selecciona o ano —</option></select>
+        </div>
+      </div>
 
       <label>Nivel salarial <span class="term" data-term="nivel">[?]</span></label>
-      <select id="nivel">
-        <option value="">— Selecciona o nivel —</option>
-      </select>
+      <select id="nivel"><option value="">— Selecciona o nivel —</option></select>
 
       <label>Data de ingreso na empresa (dd/mm/aaaa) <span class="term" data-term="ingreso">[?]</span></label>
       <input type="text" id="dataIngreso" placeholder="dd/mm/aaaa" inputmode="numeric" aria-describedby="ingroHelp">
@@ -86,6 +83,9 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
       <input type="number" id="irpf" step="0.1" placeholder="Ex.: 15">
 
       <label class="checkbox-inline"><input type="checkbox" id="prorrata"> Pagas extra prorrateadas</label>
+
+      <h3>Antigüidade (aplicación automática segundo Convenio 7.3.5)</h3>
+      <p class="info">Segundo o artigo 7.3.5 do Convenio: complemento de antigüidade = 3% por cada trienio e 3% por cada quinquenio; o módulo é o último salario base percibido máis o complemento ex‑categoría. O formulario aplicará isto automaticamente a partir da data de ingreso.</p>
 
       <div class="footer-actions">
         <button class="btn-full back ghost" data-back="1" id="btn-reset">Voltar ao inicio</button>
@@ -216,7 +216,7 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
 </div>
 
 <script>
-/* ---------- DATOS DO CONVENIO 2023 / 2024 / 2025 ---------- */
+/* ---------- DATOS DO CONVENIO 2023 / 2024 / 2025 (completos) ---------- */
 const tablas = {
   2023: {
     1:{salarioBase:24995.71,pagaVeran:2054.44,pagaNadal:2054.44,pagaMarzo:2328.37,lineal:4886.16,smi:0},
@@ -361,7 +361,6 @@ document.getElementById('btn-reset').addEventListener('click',()=>{
   ['incNoite','incHex','incIT','noiteCompleta','hexNocturnas','haiIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
   ['diasNoite','horasNoiteLab','horasNoiteFest','hexLab','hexFest','baseAnterior','diasMesIT'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   toggleIncidencias();
-  // aseguramos que o campo diasNoite estea habilitado
   document.getElementById('diasNoite').disabled = false;
   showScreen('1');
 });
@@ -482,7 +481,7 @@ function obterDatosNivelAno(){
   return { anoSel, refUse, nivelSel, t, salarioAnualTotal, horasAno, valorHora, noct };
 }
 
-/* ---------- CÁLCULO NOCTURNIDADE (CORRIXIDA) ---------- */
+/* ---------- CÁLCULO NOCTURNIDADE (VERSIÓN CORRIXIDA) ---------- */
 function calcularNocturnidade(dados){
   if (!dados) return 0;
 
@@ -495,21 +494,15 @@ function calcularNocturnidade(dados){
   const horasNoiteLab = parseFloat(document.getElementById('horasNoiteLab').value || '0');
   const horasNoiteFest = parseFloat(document.getElementById('horasNoiteFest').value || '0');
 
-  // Se marca "mes completo en noite" e non se especifican días, asumimos 30 días
   if (noiteCompleta) {
     if (!diasNoite || diasNoite <= 0) {
-      diasNoite = 30; // asumimos mes de 30 días
+      diasNoite = 30;
     }
   }
 
-  // Convertimos días completos nocturnos a horas (8 horas/día)
   const HORAS_POR_DIA_NOITE = 8;
   const horasDesdeDias = diasNoite * HORAS_POR_DIA_NOITE;
-
-  // Horas nocturnas laborables totais = horas desde días + horas laborables adicionais
   const horasNocturnasLab = horasDesdeDias + (isFinite(horasNoiteLab) ? horasNoiteLab : 0);
-
-  // Horas nocturnas festivas (só as horas festivas introducidas)
   const horasNocturnasFest = (isFinite(horasNoiteFest) ? horasNoiteFest : 0);
 
   const importeNoctLab = horasNocturnasLab * prezoNoiteNormal;
@@ -518,22 +511,6 @@ function calcularNocturnidade(dados){
   const totalNocturnidade = importeNoctLab + importeNoctFest;
 
   return totalNocturnidade;
-}
-
-/* ---------- LÓXICA: cando marque "noiteCompleta" auto-poñer días e bloquear campo ---------- */
-const noiteCheckbox = document.getElementById('noiteCompleta');
-if (noiteCheckbox) {
-  noiteCheckbox.addEventListener('change', () => {
-    const diasField = document.getElementById('diasNoite');
-    if (noiteCheckbox.checked) {
-      diasField.value = 30;
-      diasField.disabled = true;
-    } else {
-      diasField.disabled = false;
-      // non borramos automaticamente o valor se o usuario quere mantelo; deixamos como estaba
-      if (diasField.value == '30') diasField.value = '';
-    }
-  });
 }
 
 /* ---------- HORAS EXTRA ---------- */
@@ -545,6 +522,44 @@ function calcularHorasExtra(dados){
   const importeHexNormais = hexLab * valorHora;
   const importeHexFestivas = hexFest * valorHora * 1.5;
   return { hexNormais:importeHexNormais, hexFestivas:importeHexFestivas, total:importeHexNormais+importeHexFestivas };
+}
+
+/* ---------- CÁLCULO E APLICACIÓN DO COMPLEMENTO DE ANTIGÜIDADE SEGUNDO 7.3.5 ---------- */
+function calcularComplementoAntiguedade(dados){
+  // devolve obxecto con: {trienios, quinquenios, unidades, totalPercent, moduloMensual, importeAnualAplicado, importeMensualAplicado, criterioAplicado}
+  const antig = calcularAntiguedadeDesdeInput();
+  if (!antig || !dados || !dados.t) return null;
+
+  const anos = antig.years;
+  const trienios = Math.floor(anos / 3);
+  const quinquenios = Math.floor(anos / 5);
+
+  // unidades: trienios + quinquenios (segundo 7.3.5 ambos se consideran)
+  const unidades = trienios + quinquenios;
+  const totalPercent = unidades * 0.03; // 3% por cada trienio/quinquenio
+
+  // Módulo: "último salario base percibido, más el complemento ex categoría"
+  const salarioBaseAnual = dados.t.salarioBase || 0;
+  const complementoExCategoriaAnual = dados.t.lineal || 0;
+  const moduloAnual = salarioBaseAnual + complementoExCategoriaAnual;
+  const moduloMensual = moduloAnual / 12;
+
+  const importeAnualAplicado = moduloAnual * totalPercent;
+  const importeMensualAplicado = moduloMensual * totalPercent;
+
+  const criterio = 'convenio_7.3.5_3pct_por_trienio_e_quinquenio';
+
+  return {
+    trienios: trienios,
+    quinquenios: quinquenios,
+    unidades: unidades,
+    totalPercent: totalPercent,
+    moduloAnual: moduloAnual,
+    moduloMensual: moduloMensual,
+    importeAnualAplicado: importeAnualAplicado,
+    importeMensualAplicado: importeMensualAplicado,
+    criterioAplicado: criterio
+  };
 }
 
 /* ---------- SALARIO BASE, PRORRATA E COMPLEMENTOS ---------- */
@@ -610,7 +625,11 @@ function calcularResumo(){
   const hex = calcularHorasExtra(dados);
   const it = calcularIT();
 
-  const devengosTotais = sal.total + noct + hex.total + it.devengoIT;
+  // complemento de antigüidade automático segundo 7.3.5
+  const compAnt = calcularComplementoAntiguedade(dados);
+  const complementoMensual = compAnt ? compAnt.importeMensualAplicado : 0;
+
+  const devengosTotais = sal.total + complementoMensual + noct + hex.total + it.devengoIT;
 
   const baseMensualEstim = devengosTotais;
   const baseAnualConvenio = dados.salarioAnualTotal;
@@ -634,12 +653,14 @@ function calcularResumo(){
 
   const totalPagasExtra = dados.t.pagaVeran + dados.t.pagaNadal + dados.t.pagaMarzo;
 
+  // Mostrar resumo
   resumoDevengos.innerHTML = `
     <h3>Devengos</h3>
     <p>Salario mensual (salario base / 12): <strong>${sal.salarioMensual.toFixed(2)} €</strong></p>
     <p>Complemento lineal mensual: <strong>${sal.linealMensual.toFixed(2)} €</strong></p>
     <p>Prorrata mensual (se aplicable): <strong>${sal.prorrata.toFixed(2)} €</strong></p>
     <p>Complemento SMI mensual (nivel 19 se procede): <strong>${sal.smiMensual.toFixed(2)} €</strong></p>
+    <p>Complemento antigüidade aplicado (mensual): <strong>${complementoMensual.toFixed(2)} €</strong></p>
     <p>Nocturnidade: <strong>${noct.toFixed(2)} €</strong></p>
     <p>Horas extra (laborables): <strong>${hex.hexNormais.toFixed(2)} €</strong></p>
     <p>Horas extra (festivas): <strong>${hex.hexFestivas.toFixed(2)} €</strong></p>
@@ -647,10 +668,28 @@ function calcularResumo(){
     <p><strong>Total devengos (mes): ${devengosTotais.toFixed(2)} €</strong></p>
     <hr>
     <p>Pagas extra anuais (verán + Nadal + marzo): <strong>${totalPagasExtra.toFixed(2)} €</strong></p>
-    <p>Antigüidade na empresa: <strong>${antig.toString()}</strong></p>
+    <p>Antigüidade na empresa (anos/meses/días): <strong>${antig.toString()}</strong></p>
     <p>Valor hora ordinaria (segundo convenio e horas anuais): <strong>${dados.valorHora.toFixed(4)} €/h</strong></p>
     <p>Horas anuais usadas para cálculo: <strong>${dados.horasAno}</strong></p>
   `;
+
+  // Mostrar detalle do complemento de antigüidade (segundo 7.3.5)
+  let detalleAnt = '';
+  if (compAnt){
+    detalleAnt = `
+      <h4>Detalle complemento antigüidade (Convenio 7.3.5)</h4>
+      <p>Trienios: <strong>${compAnt.trienios}</strong></p>
+      <p>Quinquenios: <strong>${compAnt.quinquenios}</strong></p>
+      <p>Unidades aplicadas (trienios + quinquenios): <strong>${compAnt.unidades}</strong></p>
+      <p>% total aplicado: <strong>${(compAnt.totalPercent*100).toFixed(2)}%</strong> (3% por cada trienio/quinquenio)</p>
+      <p>Módulo anual (salario base + complemento ex categoría): <strong>${compAnt.moduloAnual.toFixed(2)} €</strong></p>
+      <p>Importe anual aplicado: <strong>${compAnt.importeAnualAplicado.toFixed(2)} €</strong></p>
+      <p>Importe mensual aplicado: <strong>${compAnt.importeMensualAplicado.toFixed(2)} €</strong></p>
+      <p>Criterio aplicado: <strong>${compAnt.criterioAplicado}</strong> (art. 7.3.5 do Convenio)</p>
+    `;
+  } else {
+    detalleAnt = `<p>Non se puido calcular o complemento de antigüidade (falta data de ingreso ou datos).</p>`;
+  }
 
   resumoBases.innerHTML = `
     <h3>Bases de cotización e recadación</h3>
@@ -660,6 +699,7 @@ function calcularResumo(){
     <p>Base suxeita a cotización AT/EP (mensual estimada): <strong>${baseATEP.toFixed(2)} €</strong></p>
     <p>Base suxeita a retención IRPF (mensual estimada): <strong>${baseIRPF.toFixed(2)} €</strong></p>
     <p>Aportación aproximada da empresa (cotizacións empresariais): <strong>${totalAportacionEmpresa.toFixed(2)} €</strong></p>
+    ${detalleAnt}
   `;
 
   resumoDeduccions.innerHTML = `
@@ -687,13 +727,13 @@ document.getElementById('imprimir').addEventListener('click',()=>{
 
 /* ---------- GLOSARIO INTERACTIVO ---------- */
 const glosarioTermos = {
-  mes:{titulo:'Mes da nómina',texto:'Mes ao que corresponde a nómina. Ex.: nómina de abril corresponde ás percepcións dese mes, aínda que o pago poida ser posterior.'},
-  ano:{titulo:'Ano da nómina',texto:'Ano natural ao que pertence a nómina. Para 2026 en diante usarase como referencia as táboas de 2025 se non hai novo convenio.'},
-  nivel:{titulo:'Nivel salarial',texto:'Nivel retributivo segundo o convenio estatal de Artes Gráficas. Determina salario base, pagas e complementos.'},
-  ingreso:{titulo:'Data de ingreso',texto:'Data na que a persoa comezou a traballar na empresa. Debe introducirse en formato dd/mm/aaaa e non pode ser anterior a 12/2013. A partir dela calcúlase a antigüidade.'},
-  nocturnidade:{titulo:'Nocturnidade',texto:'Complemento por traballar en horario nocturno. Pode pagarse por hora segundo táboas do convenio; hai tarifas distintas para días laborables e festivos.'},
-  horas_extra:{titulo:'Horas extra',texto:'Horas traballadas fóra da xornada ordinaria. Segundo criterio aplicado: horas extra en xornada normal pagan ao valor hora; en festivo pagan 150%.'},
-  it:{titulo:'Incapacidade Temporal (IT)',texto:'Situación de baixa por enfermidade común, accidente non laboral ou AT/EP. A prestación calcúlase sobre a base reguladora diaria (BRD).'}
+  mes:{titulo:'Mes da nómina',texto:'Mes ao que corresponde a nómina.'},
+  ano:{titulo:'Ano da nómina',texto:'Ano natural ao que pertence a nómina.'},
+  nivel:{titulo:'Nivel salarial',texto:'Nivel retributivo segundo o convenio.'},
+  ingreso:{titulo:'Data de ingreso',texto:'Data na que a persoa comezou a traballar na empresa. A partir dela calcúlase a antigüidade.'},
+  nocturnidade:{titulo:'Nocturnidade',texto:'Complemento por traballar en horario nocturno.'},
+  horas_extra:{titulo:'Horas extra',texto:'Horas traballadas fóra da xornada ordinaria.'},
+  it:{titulo:'Incapacidade Temporal (IT)',texto:'Situación de baixa por enfermidade ou accidente.'}
 };
 document.querySelectorAll('.term').forEach(el=>{
   el.addEventListener('click',()=>{
@@ -721,12 +761,27 @@ document.getElementById('btn-to-it').addEventListener('click',()=>{
   if (incIT) { showScreen('3'); } else { showScreen('4'); calcularResumo(); }
 });
 
+/* ---------- LÓXICA: cando marque "noiteCompleta" auto-poñer días e bloquear campo ---------- */
+const noiteCheckbox = document.getElementById('noiteCompleta');
+if (noiteCheckbox) {
+  noiteCheckbox.addEventListener('change', () => {
+    const diasField = document.getElementById('diasNoite');
+    if (noiteCheckbox.checked) {
+      diasField.value = 30;
+      diasField.disabled = true;
+    } else {
+      diasField.disabled = false;
+      if (diasField.value == '30') diasField.value = '';
+    }
+  });
+}
+
 /* ---------- Inicial toggle ---------- */
 toggleIncidencias();
 
 /* ---------- Nota de fonte no glosario ---------- */
 const gl = document.getElementById('glosario');
-gl.innerHTML += `<p class="info">Táboas salariais oficiais extraídas do BOE (Convenio Artes Gráficas 2023‑2025).</p>`;
+if (gl) gl.innerHTML += `<p class="info">Táboas salariais oficiais extraídas do BOE (Convenio Artes Gráficas 2023‑2025). Artigo 7.3.5: complemento de antigüidade 3% por trienio e 3% por quinquenio; módulo = salario base + complemento ex categoría.</p>`;
 </script>
 </body>
 </html>
