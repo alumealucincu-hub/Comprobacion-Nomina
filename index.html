@@ -524,19 +524,35 @@ function calcularHorasExtra(dados){
   return { hexNormais:importeHexNormais, hexFestivas:importeHexFestivas, total:importeHexNormais+importeHexFestivas };
 }
 
-/* ---------- CÁLCULO E APLICACIÓN DO COMPLEMENTO DE ANTIGÜIDADE SEGUNDO 7.3.5 ---------- */
+/* ---------- CÁLCULO CORRIXIDO DO COMPLEMENTO DE ANTIGÜIDADE (7.3.5) ---------- */
 function calcularComplementoAntiguedade(dados){
-  // devolve obxecto con: {trienios, quinquenios, unidades, totalPercent, moduloMensual, importeAnualAplicado, importeMensualAplicado, criterioAplicado}
+  // devolve obxecto con: {trienios, quinquenios, unidades, totalPercent, moduloAnual, moduloMensual, importeAnualAplicado, importeMensualAplicado, criterioAplicado}
   const antig = calcularAntiguedadeDesdeInput();
   if (!antig || !dados || !dados.t) return null;
 
   const anos = antig.years;
-  const trienios = Math.floor(anos / 3);
-  const quinquenios = Math.floor(anos / 5);
 
-  // unidades: trienios + quinquenios (segundo 7.3.5 ambos se consideran)
-  const unidades = trienios + quinquenios;
-  const totalPercent = unidades * 0.03; // 3% por cada trienio/quinquenio
+  // regra correcta:
+  // - 1ª unidade (3%) aos 3 anos
+  // - 2ª unidade (3%) aos 6 anos (dous trienios)
+  // - a partir de 11 anos, cada 5 anos engádese unha unidade máis
+  let unidades = 0;
+  if (anos >= 3 && anos < 6) {
+    unidades = 1;
+  } else if (anos >= 6 && anos < 11) {
+    unidades = 2;
+  } else if (anos >= 11) {
+    unidades = 2 + Math.floor((anos - 6) / 5);
+  } else {
+    unidades = 0;
+  }
+
+  // trienios son as dúas primeiras unidades (máx. 2)
+  const trienios = Math.min(2, unidades);
+  // quinquenios son as unidades restantes (se hai)
+  const quinquenios = Math.max(0, unidades - trienios);
+
+  const totalPercent = unidades * 0.03; // 3% por cada unidade
 
   // Módulo: "último salario base percibido, más el complemento ex categoría"
   const salarioBaseAnual = dados.t.salarioBase || 0;
@@ -547,8 +563,6 @@ function calcularComplementoAntiguedade(dados){
   const importeAnualAplicado = moduloAnual * totalPercent;
   const importeMensualAplicado = moduloMensual * totalPercent;
 
-  const criterio = 'convenio_7.3.5_3pct_por_trienio_e_quinquenio';
-
   return {
     trienios: trienios,
     quinquenios: quinquenios,
@@ -558,7 +572,7 @@ function calcularComplementoAntiguedade(dados){
     moduloMensual: moduloMensual,
     importeAnualAplicado: importeAnualAplicado,
     importeMensualAplicado: importeMensualAplicado,
-    criterioAplicado: criterio
+    criterioAplicado: 'convenio_7.3.5_3pct_por_trienio_e_quinquenio'
   };
 }
 
@@ -678,10 +692,10 @@ function calcularResumo(){
   if (compAnt){
     detalleAnt = `
       <h4>Detalle complemento antigüidade (Convenio 7.3.5)</h4>
-      <p>Trienios: <strong>${compAnt.trienios}</strong></p>
-      <p>Quinquenios: <strong>${compAnt.quinquenios}</strong></p>
+      <p>Trienios (unidades 1 e 2): <strong>${compAnt.trienios}</strong></p>
+      <p>Quinquenios (unidades posteriores): <strong>${compAnt.quinquenios}</strong></p>
       <p>Unidades aplicadas (trienios + quinquenios): <strong>${compAnt.unidades}</strong></p>
-      <p>% total aplicado: <strong>${(compAnt.totalPercent*100).toFixed(2)}%</strong> (3% por cada trienio/quinquenio)</p>
+      <p>% total aplicado: <strong>${(compAnt.totalPercent*100).toFixed(2)}%</strong> (3% por cada unidade)</p>
       <p>Módulo anual (salario base + complemento ex categoría): <strong>${compAnt.moduloAnual.toFixed(2)} €</strong></p>
       <p>Importe anual aplicado: <strong>${compAnt.importeAnualAplicado.toFixed(2)} €</strong></p>
       <p>Importe mensual aplicado: <strong>${compAnt.importeMensualAplicado.toFixed(2)} €</strong></p>
