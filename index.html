@@ -56,6 +56,8 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
 .finish{background:var(--verde-med);color:#fff;}
 .info{color:var(--muted);font-size:.9rem;margin-top:6px;}
 .summary-box{background:var(--bg);padding:12px;border-radius:10px;border:1px solid var(--verde-claro);margin-top:12px;}
+.summary-box p{margin:2px 0;}
+.summary-box p strong{font-weight:700;}
 .term{color:var(--accent);text-decoration:underline;cursor:pointer;}
 .footer-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
 .modal{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;z-index:9999;}
@@ -510,7 +512,7 @@ function calcularHorasExtra(dados){
   if(!dados) return {
     hexLab:0,hexFest:0,hexLabNoite:0,hexFestNoite:0,
     total:0,horasLab:0,horasFest:0,horasLabNoite:0,horasFestNoite:0,
-    contiaHora:datosValorHora(dados)
+    contiaHora:0
   };
   const valorHora=dados.valorHora;
   const nivel=dados.nivelSel;
@@ -568,14 +570,14 @@ function calcularComplementoAntiguedade(dados){
 function calcularSalarioBase(dados){
   if(!dados) return {salarioMensual:0,prorrata:0,linealMensual:0,smiMensual:0,total:0};
   const t=dados.t;
-  const prorrata=document.getElementById('prorrata').checked;
+  const prorrataMarcada=document.getElementById('prorrata').checked;
   const salarioMensual=t.salarioBase/12;
   const linealMensual=t.lineal/12;
   const smiMensual=t.smi/12;
-  let prorrataMensual=0;
-  if(prorrata) prorrataMensual=(t.pagaVeran+t.pagaNadal+t.pagaMarzo)/12;
-  const total=salarioMensual+linealMensual+smiMensual+prorrataMensual;
-  return{salarioMensual,prorrata:prorrataMensual,linealMensual,smiMensual,total};
+  let prorrataMensualDevengo=0;
+  if(prorrataMarcada) prorrataMensualDevengo=(t.pagaVeran+t.pagaNadal+t.pagaMarzo)/12;
+  const total=salarioMensual+linealMensual+smiMensual+prorrataMensualDevengo;
+  return{salarioMensual,prorrata:prorrataMensualDevengo,linealMensual,smiMensual,total};
 }
 
 /* ---------- IT ---------- */
@@ -639,13 +641,17 @@ function calcularResumo(){
 
   const devengosTotais=sal.total+complementoMensual+noct.total+hex.total+it.devengoIT;
 
-  const baseMensualEstim=devengosTotais;
-  const baseAnualConvenio=dados.salarioAnualTotal;
-  const baseCC=baseMensualEstim;
-  const baseATEP=baseMensualEstim;
-  const baseIRPF=baseMensualEstim;
-
   const tipoIRPF=parseFloat(document.getElementById('irpf').value||'0')/100;
+
+  const totalPagasExtra=dados.t.pagaVeran+dados.t.pagaNadal+dados.t.pagaMarzo;
+  const prorrataMensualBases=totalPagasExtra/12;
+
+  const remuneracionTotal=devengosTotais;
+  const baseTotalCotizacion=remuneracionTotal+prorrataMensualBases;
+  const baseCC=baseTotalCotizacion;
+  const baseATEP=baseTotalCotizacion;
+  const baseIRPF=devengosTotais;
+
   const ccTraballador=baseCC*0.047;
   const desemprego=baseATEP*0.0155;
   const formacion=baseATEP*0.001;
@@ -654,32 +660,42 @@ function calcularResumo(){
 
   const liquido=devengosTotais-totalDeduccions;
 
-  const totalPagasExtra=dados.t.pagaVeran+dados.t.pagaNadal+dados.t.pagaMarzo;
-
   const salarioDia=sal.salarioMensual/30;
 
   let detalleAnt='';
   if(compAnt){
     detalleAnt=`
-      <p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span>: ${ (compAnt.totalPercent*100).toFixed(2) }% aplicado sobre o salario base anual (módulo: ${compAnt.moduloAnual.toFixed(2)} €) - devengo mensual: <strong>${complementoMensual.toFixed(2)} €</strong></p>
+      <p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span></p>
+      <p>Tanto por cento aplicado: ${(compAnt.totalPercent*100).toFixed(2)}%</p>
+      <p>Módulo anual (salario base): ${compAnt.moduloAnual.toFixed(2)} €</p>
+      <p>Devengo mensual: <strong>${complementoMensual.toFixed(2)} €</strong></p>
     `;
   }else{
-    detalleAnt=`<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span>: non se puido calcular (revisa a data de ingreso).</p>`;
+    detalleAnt=`<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span></p><p>Non se puido calcular (revisa a data de ingreso).</p>`;
   }
 
   let detalleIT='';
   if(it.devengoIT>0){
     detalleIT+=`
-      <p><span class="term" data-term="complemento_enfermidade">Complemento de enfermidade</span>: contía por día (BRD): ${brdCalculada.toFixed(4)} € - días que aplica no mes: ${it.diasIT} - devengo (complemento empresa): <strong>${it.complementoEmpresa.toFixed(2)} €</strong></p>
+      <p><span class="term" data-term="complemento_enfermidade">Complemento de enfermidade</span></p>
+      <p>Contía por día (BRD): ${brdCalculada.toFixed(4)} €</p>
+      <p>Días que aplica no mes: ${it.diasIT}</p>
+      <p>Devengo (complemento empresa): <strong>${it.complementoEmpresa.toFixed(2)} €</strong></p>
     `;
     if(it.prestacionSS60>0){
       detalleIT+=`
-        <p><span class="term" data-term="prestacion_ss_60">Prestación Seguridade Social 60%</span>: contía que aplica (60% BRD) - días que aplica no mes: ${it.diasIT} - devengo: <strong>${it.prestacionSS60.toFixed(2)} €</strong></p>
+        <p><span class="term" data-term="prestacion_ss_60">Prestación Seguridade Social 60%</span></p>
+        <p>Contía que aplica (60% BRD)</p>
+        <p>Días que aplica no mes: ${it.diasIT}</p>
+        <p>Devengo: <strong>${it.prestacionSS60.toFixed(2)} €</strong></p>
       `;
     }
     if(it.prestacionSS75>0){
       detalleIT+=`
-        <p><span class="term" data-term="prestacion_ss_75">Prestación Seguridade Social 75%</span>: contía que aplica (75% BRD) - días que aplica no mes: ${it.diasIT} - devengo: <strong>${it.prestacionSS75.toFixed(2)} €</strong></p>
+        <p><span class="term" data-term="prestacion_ss_75">Prestación Seguridade Social 75%</span></p>
+        <p>Contía que aplica (75% BRD)</p>
+        <p>Días que aplica no mes: ${it.diasIT}</p>
+        <p>Devengo: <strong>${it.prestacionSS75.toFixed(2)} €</strong></p>
       `;
     }
   }
@@ -687,7 +703,10 @@ function calcularResumo(){
   let detalleNoite='';
   if(noct.total>0){
     detalleNoite=`
-      <p><span class="term" data-term="nocturnidade">Nocturnidade</span>: contía por hora: ${noct.contiaHora.toFixed(4)} € - días que aplica: ${noct.dias} - devengo: <strong>${noct.total.toFixed(2)} €</strong></p>
+      <p><span class="term" data-term="nocturnidade">Nocturnidade</span></p>
+      <p>Contía por hora: ${noct.contiaHora.toFixed(4)} €</p>
+      <p>Días que aplica: ${noct.dias}</p>
+      <p>Devengo: <strong>${noct.total.toFixed(2)} €</strong></p>
     `;
   }
 
@@ -695,43 +714,69 @@ function calcularResumo(){
   if(hex.total>0){
     if(hex.horasLab>0){
       detalleHex+=`
-        <p><span class="term" data-term="horas_extra">Horas extra laborables (diurnas)</span>: número de horas: ${hex.horasLab} - contía por hora: ${hex.contiaHora.toFixed(4)} € - devengo: <strong>${hex.hexLab.toFixed(2)} €</strong></p>
+        <p><span class="term" data-term="horas_extra">Horas extra laborables (diurnas)</span></p>
+        <p>Número de horas: ${hex.horasLab}</p>
+        <p>Contía por hora: ${hex.contiaHora.toFixed(4)} €</p>
+        <p>Devengo: <strong>${hex.hexLab.toFixed(2)} €</strong></p>
       `;
     }
     if(hex.horasFest>0){
       detalleHex+=`
-        <p><span class="term" data-term="horas_extra_festivas">Horas extra festivas (diurnas)</span>: número de horas: ${hex.horasFest} - contía por hora (150%): ${(hex.contiaHora*1.5).toFixed(4)} € - devengo: <strong>${hex.hexFest.toFixed(2)} €</strong></p>
+        <p><span class="term" data-term="horas_extra_festivas">Horas extra festivas (diurnas)</span></p>
+        <p>Número de horas: ${hex.horasFest}</p>
+        <p>Contía por hora (150%): ${(hex.contiaHora*1.5).toFixed(4)} €</p>
+        <p>Devengo: <strong>${hex.hexFest.toFixed(2)} €</strong></p>
       `;
     }
     if(hex.horasLabNoite>0){
       detalleHex+=`
-        <p><span class="term" data-term="horas_extra_nocturnas_lab">Horas extra nocturnas laborables</span>: número de horas: ${hex.horasLabNoite} - contía por hora (hora extra + nocturnidade): ${(hex.contiaHora+hex.contiaNoiteNormal).toFixed(4)} € - devengo: <strong>${hex.hexLabNoite.toFixed(2)} €</strong></p>
+        <p><span class="term" data-term="horas_extra_nocturnas_lab">Horas extra nocturnas laborables</span></p>
+        <p>Número de horas: ${hex.horasLabNoite}</p>
+        <p>Contía por hora (hora extra + nocturnidade): ${(hex.contiaHora+hex.contiaNoiteNormal).toFixed(4)} €</p>
+        <p>Devengo: <strong>${hex.hexLabNoite.toFixed(2)} €</strong></p>
       `;
     }
     if(hex.horasFestNoite>0){
       detalleHex+=`
-        <p><span class="term" data-term="horas_extra_nocturnas_fest">Horas extra nocturnas festivas</span>: número de horas: ${hex.horasFestNoite} - contía por hora (hora extra festiva + nocturnidade festiva): ${(hex.contiaHora*1.5+hex.contiaNoiteFestiva).toFixed(4)} € - devengo: <strong>${hex.hexFestNoite.toFixed(2)} €</strong></p>
+        <p><span class="term" data-term="horas_extra_nocturnas_fest">Horas extra nocturnas festivas</span></p>
+        <p>Número de horas: ${hex.horasFestNoite}</p>
+        <p>Contía por hora (hora extra festiva + nocturnidade festiva): ${(hex.contiaHora*1.5+hex.contiaNoiteFestiva).toFixed(4)} €</p>
+        <p>Devengo: <strong>${hex.hexFestNoite.toFixed(2)} €</strong></p>
       `;
     }
   }
 
   resumoDevengos.innerHTML=`
     <h3>Devengos</h3>
-    <p><span class="term" data-term="salario_base">Salario base</span>: contía por día: ${salarioDia.toFixed(4)} € - contía por mes (30 días): ${sal.salarioMensual.toFixed(2)} € - <span class="term" data-term="devengo">devengo</span>: <strong>${sal.salarioMensual.toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="salario_base">Salario base</span></p>
+    <p>Contía por día: ${salarioDia.toFixed(4)} €</p>
+    <p>Contía por mes (30 días): ${sal.salarioMensual.toFixed(2)} €</p>
+    <p><span class="term" data-term="devengo">Devengo</span>: <strong>${sal.salarioMensual.toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="linealidade">Linealidade</span></p>
+    <p>Contía por día: ${(sal.linealMensual/30).toFixed(4)} €</p>
+    <p>Días que aplica no mes: 30</p>
+    <p>Devengo: <strong>${sal.linealMensual.toFixed(2)} €</strong></p>
     ${detalleAnt}
-    <p><span class="term" data-term="linealidade">Linealidade</span>: contía por día: ${(sal.linealMensual/30).toFixed(4)} € - días que aplica no mes: 30 - devengo: <strong>${sal.linealMensual.toFixed(2)} €</strong></p>
     ${detalleIT}
     ${detalleNoite}
     ${detalleHex}
-    <p><span class="term" data-term="total_devengo">Total devengo</span>: <strong>${devengosTotais.toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="total_devengo">Total devengo</span></p>
+    <p><strong>${devengosTotais.toFixed(2)} €</strong></p>
   `;
 
   resumoDeduccions.innerHTML=`
     <h3>Deduccións</h3>
-    <p><span class="term" data-term="continxencias_comuns">Desconto continxencias comúns</span>: 4,70% - deducción: <strong>${ccTraballador.toFixed(2)} €</strong></p>
-    <p><span class="term" data-term="base_accidentes">Desconto base accidentes / desemprego / formación</span>: tipos 1,55% + 0,10% - deducción total: <strong>${(desemprego+formacion).toFixed(2)} €</strong></p>
-    <p><span class="term" data-term="desconto_irpf">Desconto IRPF</span>: ${(tipoIRPF*100).toFixed(1)}% - deducción: <strong>${irpfImporte.toFixed(2)} €</strong></p>
-    <p><span class="term" data-term="total_deduccions">Total deduccións</span>: <strong>${totalDeduccions.toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="continxencias_comuns">Desconto continxencias comúns</span></p>
+    <p>% aplicado: 4,70%</p>
+    <p>Deducción: <strong>${ccTraballador.toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="base_accidentes">Desconto base accidentes / desemprego / formación</span></p>
+    <p>% aplicado: 1,55% + 0,10%</p>
+    <p>Deducción total: <strong>${(desemprego+formacion).toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="desconto_irpf">Desconto IRPF</span></p>
+    <p>% aplicado: ${(tipoIRPF*100).toFixed(1)}%</p>
+    <p>Deducción: <strong>${irpfImporte.toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="total_deduccions">Total deduccións</span></p>
+    <p><strong>${totalDeduccions.toFixed(2)} €</strong></p>
   `;
 
   resumoLiquido.innerHTML=`
@@ -739,20 +784,25 @@ function calcularResumo(){
     <p><strong>${liquido.toFixed(2)} €</strong></p>
   `;
 
-  const baseTotalCotizacion=baseCC;
-  const remuneracionTotal=sal.total+complementoMensual+noct.total+hex.total+it.devengoIT;
-  const prorrataMensual=sal.prorrata;
-
   resumoBases.innerHTML=`
     <h3>Determinación bases cotización Seguridade Social</h3>
-    <p><span class="term" data-term="base_total_cotizacion">Base total de cotización</span>: <strong>${baseTotalCotizacion.toFixed(2)} €</strong></p>
-    <p>&nbsp;&nbsp;• <span class="term" data-term="remuneracion_total">Remuneración total</span>: <strong>${remuneracionTotal.toFixed(2)} €</strong></p>
-    <p>&nbsp;&nbsp;• <span class="term" data-term="prorrata_pagax">Prorrata pagas extra</span>: <strong>${prorrataMensual.toFixed(2)} €</strong></p>
+    <p><span class="term" data-term="base_total_cotizacion">Base total de cotización</span></p>
+    <p>Contía: <strong>${baseTotalCotizacion.toFixed(2)} €</strong></p>
+    <p>&nbsp;&nbsp;• <span class="term" data-term="remuneracion_total">Remuneración total</span></p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;Contía: <strong>${remuneracionTotal.toFixed(2)} €</strong></p>
+    <p>&nbsp;&nbsp;• <span class="term" data-term="prorrata_pagax">Prorrata pagas extra</span></p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;Contía: <strong>${prorrataMensualBases.toFixed(2)} €</strong></p>
     <p><span class="term" data-term="desglose_bases">Desglose de bases</span></p>
-    <p>&nbsp;&nbsp;• <span class="term" data-term="rexime_xeral">Réxime xeral</span>: importe base: <strong>${baseCC.toFixed(2)} €</strong> - % retención: 4,70% - Aportación traballador: <strong>${ccTraballador.toFixed(2)} €</strong></p>
-    <p>&nbsp;&nbsp;• <span class="term" data-term="desemprego_fp">Desemprego / F.P.</span>: importe base: <strong>${baseATEP.toFixed(2)} €</strong> - % retención: 1,55% + 0,10% - Aportación traballador: <strong>${(desemprego+formacion).toFixed(2)} €</strong></p>
-    <p class="info">Determinación das bases de cotización á Seguridade Social e conceptos de recadación conxunta, e da base suxeita á retención do IRPF, segundo o convenio e a normativa vixente.</p>
-    <p class="info">Pagas extra anuais (verán + Nadal + marzo): <strong>${totalPagasExtra.toFixed(2)} €</strong>. Base anual convenio (inclúe pagas e linealidade): <strong>${baseAnualConvenio.toFixed(2)} €</strong>.</p>
+    <p>&nbsp;&nbsp;• <span class="term" data-term="rexime_xeral">Réxime xeral</span></p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;Importe base: <strong>${baseCC.toFixed(2)} €</strong></p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;% retención: 4,70%</p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;Aportación traballador: <strong>${ccTraballador.toFixed(2)} €</strong></p>
+    <p>&nbsp;&nbsp;• <span class="term" data-term="desemprego_fp">Desemprego / F.P.</span></p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;Importe base: <strong>${baseATEP.toFixed(2)} €</strong></p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;% retención: 1,55% + 0,10%</p>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;Aportación traballador: <strong>${(desemprego+formacion).toFixed(2)} €</strong></p>
+    <p class="info">Determinación das bases de cotización á Seguridade Social e conceptos de recadación conxunta, e da base suxeita á retención do IRPF, segundo o convenio e a normativa vixente. Para as bases téñense en conta as pagas extra aínda que non estean prorrateadas na nómina mensual.</p>
+    <p class="info">Pagas extra anuais (verán + Nadal + marzo): <strong>${totalPagasExtra.toFixed(2)} €</strong>. Base anual convenio (inclúe pagas e linealidade): <strong>${dados.salarioAnualTotal.toFixed(2)} €</strong>.</p>
   `;
 
   showScreen('4');
@@ -785,24 +835,28 @@ const glosarioTermos={
   desconto_irpf:{titulo:'Desconto IRPF',texto:'Retención a conta do Imposto sobre a Renda das Persoas Físicas, aplicada sobre a base suxeita a IRPF.'},
   total_deduccions:{titulo:'Total deduccións',texto:'Suma de todas as deduccións que se restan dos devengos (cotizacións á Seguridade Social e IRPF).'},
   liquido_total:{titulo:'Líquido total a percibir',texto:'Importe final que recibe a persoa traballadora, resultado de restar as deduccións ao total devengo.'},
-  base_total_cotizacion:{titulo:'Base total de cotización',texto:'Importe sobre o que se calculan as cotizacións á Seguridade Social. Inclúe remuneracións e prorrata de pagas extra, dentro dos límites legais.'},
-  remuneracion_total:{titulo:'Remuneración total',texto:'Suma de todos os conceptos retributivos do mes, sen incluír a prorrata de pagas extra cando estas non están prorrateadas.'},
-  prorrata_pagax:{titulo:'Prorrata pagas extra',texto:'Parte proporcional das pagas extraordinarias que se engade cada mes cando están prorrateadas.'},
+  base_total_cotizacion:{titulo:'Base total de cotización',texto:'Importe sobre o que se calculan as cotizacións á Seguridade Social. Inclúe remuneracións e a parte proporcional das pagas extra, aínda que non se cobren mes a mes.'},
+  remuneracion_total:{titulo:'Remuneración total',texto:'Suma de todos os conceptos retributivos do mes efectivamente devengados (salario base, complementos, IT, etc.).'},
+  prorrata_pagax:{titulo:'Prorrata pagas extra',texto:'Parte proporcional das pagas extraordinarias que se ten en conta para as bases de cotización, aínda que non estean prorrateadas na nómina mensual.'},
   desglose_bases:{titulo:'Desglose de bases',texto:'Detalle das distintas bases de cotización (réxime xeral, desemprego, formación profesional, etc.) e das súas porcentaxes.'},
   rexime_xeral:{titulo:'Réxime xeral',texto:'Réxime principal da Seguridade Social para traballadores por conta allea. Inclúe a cotización por continxencias comúns.'},
   desemprego_fp:{titulo:'Desemprego / F.P.',texto:'Cotizacións destinadas a desemprego e formación profesional, calculadas sobre a base de accidentes / AT/EP.'},
   it:{titulo:'Incapacidade Temporal (IT)',texto:'Situación de baixa por enfermidade ou accidente. A prestación calcúlase sobre a base reguladora, non directamente sobre o salario.'}
 };
-document.querySelectorAll('.term').forEach(el=>{
-  el.addEventListener('click',()=>{
-    const key=el.dataset.term;
+
+/* Event delegation para que funcionen tódolos enlaces, tamén os xerados no resumo */
+document.addEventListener('click',(e)=>{
+  const target=e.target;
+  if(target.classList && target.classList.contains('term')){
+    const key=target.dataset.term;
     const info=glosarioTermos[key];
     if(!info) return;
     document.getElementById('modalTitle').textContent=info.titulo;
     document.getElementById('modalBody').innerHTML=`<p>${info.texto}</p>`;
     openModal();
-  });
+  }
 });
+
 function openModal(){
   const m=document.getElementById('modal');
   m.style.display='flex';
