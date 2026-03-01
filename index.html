@@ -402,26 +402,46 @@ function calcularIT(){
   const tipo=document.querySelector('input[name="tipoIT"]:checked')?.value||'ec_anl';
   const brd=brdCalculada||0;
   let total=0;
+  const desglose=[];
   for(let i=1;i<=dias;i++){
     const diaBaixa=Math.floor((start-inicio)/(1000*60*60*24))+i;
     let pct=0;
+    let tipoDia='';
     if(tipo==='ec_anl'){
-      if(diaBaixa<=3)pct=0;
-      else if(diaBaixa<=20)pct=0.6;
-      else pct=0.75;
-      if(document.getElementById('hospitalizacion').checked&&diaBaixa>=5&&diaBaixa<=20)pct=1;
+      if(diaBaixa<=3){pct=0;tipoDia='EC/ANL - Días 1-3 (0%)';}
+      else if(diaBaixa<=20){pct=0.6;tipoDia='EC/ANL - Días 4-20 (60%)';}
+      else{pct=0.75;tipoDia='EC/ANL - Día 21+ (75%)';}
+      if(document.getElementById('hospitalizacion').checked&&diaBaixa>=5&&diaBaixa<=20){pct=1;tipoDia='EC/ANL - Hospitalización (100%)';}
     }else if(tipo==='atep'){
-      pct=diaBaixa<5?0.75:1;
+      if(diaBaixa<5){pct=0.75;tipoDia='AT/EP - Días 1-4 (75%)';}
+      else{pct=1;tipoDia='AT/EP - Día 5+ (100%)';}
     }else if(tipo==='donacion'){
       pct=1;
+      tipoDia='Doación órganos (100%)';
     }else{
       const sm=document.getElementById('situacionEspecialMuller').value;
-      if(sm==='menstruacion')pct=diaBaixa<=20?0.6:0.75;
-      else if(sm==='embarazo')pct=diaBaixa===1?1:(diaBaixa<=20?0.6:0.75);
+      if(sm==='menstruacion'){
+        if(diaBaixa<=20){pct=0.6;tipoDia='Menstruación - Días 1-20 (60%)';}
+        else{pct=0.75;tipoDia='Menstruación - Día 21+ (75%)';}
+      }else if(sm==='embarazo'){
+        if(diaBaixa===1){pct=1;tipoDia='Embarazo - Día 1 (100%)';}
+        else if(diaBaixa<=20){pct=0.6;tipoDia='Embarazo - Días 2-20 (60%)';}
+        else{pct=0.75;tipoDia='Embarazo - Día 21+ (75%)';}
+      }
     }
-    total+=brd*pct;
+    const importeDia=brd*pct;
+    total+=importeDia;
+    desglose.push({
+      diaGlobal:diaBaixa,
+      diaMes:i,
+      fecha:new Date(start.getTime()+(i-1)*24*60*60*1000),
+      porcentaje:pct*100,
+      importe:importeDia,
+      tipo:tipoDia,
+      brd:brd
+    });
   }
-  return{activa:true,dias,total};
+  return{activa:true,dias,total,desgloseDias:desglose};
 }
 
 let brdCalculada=0;
@@ -565,7 +585,7 @@ function calcularResumo(){
   const totalDeduccions=cc+ate+irpf;
 
   // Mostrar resumo con termos clicables
-  document.getElementById('resumoDevengos').innerHTML='<h3>Devengos</h3>'+(it.activa?'<p>Días do mes: '+diasReais+' | Días traballados: '+diasTraballados+' | Días baixa: '+it.dias+'</p>':'')+'<p><span class="term" data-term="salario_base">Salario base</span>: '+salarioBaseProporcional.toFixed(2)+' €'+(it.activa?' (proporcional)':'')+'</p><p><span class="term" data-term="linealidade">Linealidade</span>: '+linealProporcional.toFixed(2)+' €</p>'+(compAntigProporcional>0?'<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span> ('+(antig.porcentaje*100).toFixed(0)+'%): '+compAntigProporcional.toFixed(2)+' €</p>':'')+(noct.total>0?'<p><span class="term" data-term="nocturnidade">Nocturnidade</span>: '+noct.total.toFixed(2)+' €</p>':'')+(hex.total>0?'<p><span class="term" data-term="horas_extra">Horas extra</span>: '+hex.total.toFixed(2)+' €</p>':'')+(it.activa?'<p><span class="term" data-term="it">Incapacidade Temporal</span> ('+it.dias+' días): '+it.total.toFixed(2)+' €</p>':'')+(reduccion?'<p>Redución xornada: '+reduccion.tipo+'</p>':'')+'<p><strong><span class="term" data-term="total_devengo">Total devengo</span>: '+devengoTotal.toFixed(2)+' €</strong></p>';
+  document.getElementById('resumoDevengos').innerHTML='<h3>Devengos</h3>'+(it.activa?'<p>Días do mes: '+diasReais+' | Días traballados: '+diasTraballados+' | Días baixa: '+it.dias+'</p>':'')+'<p><span class="term" data-term="salario_base">Salario base</span>: '+salarioBaseProporcional.toFixed(2)+' €'+(it.activa?' (proporcional)':'')+'</p><p><span class="term" data-term="linealidade">Linealidade</span>: '+linealProporcional.toFixed(2)+' €</p>'+(compAntigProporcional>0?'<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span> ('+(antig.porcentaje*100).toFixed(0)+'%): '+compAntigProporcional.toFixed(2)+' €</p>':'')+(noct.total>0?'<p><span class="term" data-term="nocturnidade">Nocturnidade</span>: '+noct.total.toFixed(2)+' €</p>':'')+(hex.total>0?'<p><span class="term" data-term="horas_extra">Horas extra</span>: '+hex.total.toFixed(2)+' €</p>':'')+(it.activa?'<p class="it-clickable" id="desgloseIT" style="cursor:pointer;color:#2d5c42;font-weight:600;" title="Clic para ver desglose día a día"><span class="term" data-term="it">Incapacidade Temporal</span> ('+it.dias+' días): '+it.total.toFixed(2)+' € [+]</p>':'')+(reduccion?'<p>Redución xornada: '+reduccion.tipo+'</p>':'')+'<p><strong><span class="term" data-term="total_devengo">Total devengo</span>: '+devengoTotal.toFixed(2)+' €</strong></p>';
 
   document.getElementById('resumoDeduccions').innerHTML='<h3>Deduccións</h3><p><span class="term" data-term="continxencias_comuns">Continxencias comúns</span> (4.7%): '+cc.toFixed(2)+' €</p><p><span class="term" data-term="base_accidentes">AT/EP + Formación</span> (1.65%): '+ate.toFixed(2)+' €</p><p><span class="term" data-term="desconto_irpf">IRPF</span>: '+irpf.toFixed(2)+' €</p><p><strong><span class="term" data-term="total_deduccions">Total deduccións</span>: '+totalDeduccions.toFixed(2)+' €</strong></p>';
 
@@ -639,6 +659,46 @@ document.getElementById('imprimir').addEventListener('click',()=>{window.print()
 toggleSituacionesEspeciales();
 toggleIncidencias();
 toggleTipoIT();
+
+// Función para mostrar desglose de IT día a día
+function mostrarDesgloseIT(){
+  const it=calcularIT();
+  if(!it.activa||!it.desgloseDias||it.desgloseDias.length===0)return;
+
+  let html='<h3>Desglose día a día da Incapacidade Temporal</h3>';
+  html+='<p style="font-size:0.9rem;color:#666;margin-bottom:12px;">Base Reguladora Diaria (BRD): '+it.desgloseDias[0].brd.toFixed(4)+' €</p>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">';
+  html+='<thead style="background:#f3f8f4;"><tr><th style="padding:8px;border:1px solid #b7d2c0;text-align:left;">Día</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:left;">Data</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:left;">Tipo</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:right;">%</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:right;">Importe</th></tr></thead>';
+  html+='<tbody>';
+
+  let totalImporte=0;
+  it.desgloseDias.forEach(d=>{
+    const fechaStr=d.fecha.getDate()+'/'+(d.fecha.getMonth()+1)+'/'+d.fecha.getFullYear();
+    html+='<tr style="border-bottom:1px solid #e6efe6;">';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;">'+d.diaGlobal+'º día</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;">'+fechaStr+'</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;">'+d.tipo+'</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;text-align:right;">'+d.porcentaje.toFixed(0)+'%</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;text-align:right;font-weight:600;">'+d.importe.toFixed(2)+' €</td>';
+    html+='</tr>';
+    totalImporte+=d.importe;
+  });
+
+  html+='</tbody>';
+  html+='<tfoot style="background:#f3f8f4;font-weight:700;"><tr><td colspan="4" style="padding:8px;border:1px solid #b7d2c0;text-align:right;">TOTAL IT:</td><td style="padding:8px;border:1px solid #b7d2c0;text-align:right;color:#1f3b2c;">'+totalImporte.toFixed(2)+' €</td></tr></tfoot>';
+  html+='</table>';
+
+  document.getElementById('modalTitle').textContent='Desglose de Incapacidade Temporal';
+  document.getElementById('modalBody').innerHTML=html;
+  document.getElementById('modal').style.display='flex';
+}
+
+// Engadir evento ao elemento de IT cando se xera o resumo
+document.addEventListener('click',e=>{
+  if(e.target.id==='desgloseIT'||e.target.closest('#desgloseIT')){
+    mostrarDesgloseIT();
+  }
+});
 </script>
 </body>
 </html>
