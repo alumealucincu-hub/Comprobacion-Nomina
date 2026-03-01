@@ -42,6 +42,7 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
 @media print{body{background:#fff;}#wizard{box-shadow:none;margin:0;border-radius:0;width:100%;max-width:none;min-height:auto;}.header{border-bottom:1px solid #ccc;}.screen{display:block;}.footer-actions,#imprimir{display:none !important;}.modal{display:none !important;}}
 </style>
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 <div id="wizard">
@@ -308,6 +309,7 @@ document.querySelectorAll('input[name="tipoIT"]').forEach(r=>r.addEventListener(
 
 // CÁLCULOS
 function anoReferencia(ano){if(!ano)return null;if(ano>=2026)return 2025;return ano;}
+function diasReaisMes(ano,mes){return new Date(ano,mes,0).getDate();}
 function horasAnuais(ano){return(ano>=2025)?1760:1768;}
 
 function obterDatosNivelAno(){
@@ -360,7 +362,7 @@ function calcularNocturnidade(dados){
   const prezo=dados.noct.normal[nivel]||0;
   const completa=document.getElementById('noiteCompleta').checked;
   let dias=parseFloat(document.getElementById('diasNoite').value||'0');
-  if(completa)dias=30;
+  if(completa){const mesNoct=parseInt(document.getElementById('mes').value);const anoNoct=parseInt(document.getElementById('ano').value);dias=diasReaisMes(anoNoct,mesNoct);}
   return{total:dias*8*prezo,dias,prezo};
 }
 
@@ -534,12 +536,28 @@ function calcularResumo(){
   // IT
   const it=calcularIT();
 
+  // Cálculo de días reais do mes e aplicación de proporcionalidade
+  const diasReais=diasReaisMes(dados.anoSel,parseInt(document.getElementById('mes').value));
+  let diasTraballados=diasReais;
+  if(it.activa)diasTraballados=diasReais-it.dias;
+  if(diasTraballados<0)diasTraballados=0;
+
+  // Aplicar proporcionalidade ao salario base e complementos se hai IT
+  let factorDiasTraballados=1;
+  if(it.activa&&diasReais>0)factorDiasTraballados=diasTraballados/diasReais;
+
+  const salarioBaseProporcional=salarioBase*factorDiasTraballados;
+  const linealProporcional=lineal*factorDiasTraballados;
+  const smiProporcional=smi*factorDiasTraballados;
+  const pagasExtraProporcional=pagasExtra*factorDiasTraballados;
+  const compAntigProporcional=compAntig*factorDiasTraballados;
+
   // Totales
-  const devengoTraballado=salarioBase+lineal+smi+pagasExtra+compAntig+noct.total+hex.total;
+  const devengoTraballado=salarioBaseProporcional+linealProporcional+smiProporcional+pagasExtraProporcional+compAntigProporcional+noct.total+hex.total;
   const devengoTotal=devengoTraballado+(it.activa?it.total:0);
 
   // Deduccións
-  const baseCotizacion=devengoTotal+(prorrata?0:(t.pagaVeran+t.pagaNadal+t.pagaMarzo)/12);
+  const baseCotizacion=devengoTotal+(prorrata?0:((t.pagaVeran+t.pagaNadal+t.pagaMarzo)/12)*factorDiasTraballados);
   const cc=baseCotizacion*0.047;
   const ate=baseCotizacion*0.0165;
   const irpfPct=parseFloat(document.getElementById('irpf').value||0)/100;
@@ -547,7 +565,7 @@ function calcularResumo(){
   const totalDeduccions=cc+ate+irpf;
 
   // Mostrar resumo con termos clicables
-  document.getElementById('resumoDevengos').innerHTML='<h3>Devengos</h3><p><span class="term" data-term="salario_base">Salario base</span>: '+salarioBase.toFixed(2)+' €</p><p><span class="term" data-term="linealidade">Linealidade</span>: '+lineal.toFixed(2)+' €</p>'+(compAntig>0?'<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span> ('+(antig.porcentaje*100).toFixed(0)+'%): '+compAntig.toFixed(2)+' €</p>':'')+(noct.total>0?'<p><span class="term" data-term="nocturnidade">Nocturnidade</span>: '+noct.total.toFixed(2)+' €</p>':'')+(hex.total>0?'<p><span class="term" data-term="horas_extra">Horas extra</span>: '+hex.total.toFixed(2)+' €</p>':'')+(it.activa?'<p><span class="term" data-term="it">Incapacidade Temporal</span> ('+it.dias+' días): '+it.total.toFixed(2)+' €</p>':'')+(reduccion?'<p>Redución xornada: '+reduccion.tipo+'</p>':'')+'<p><strong><span class="term" data-term="total_devengo">Total devengo</span>: '+devengoTotal.toFixed(2)+' €</strong></p>';
+  document.getElementById('resumoDevengos').innerHTML='<h3>Devengos</h3>'+(it.activa?'<p>Días do mes: '+diasReais+' | Días traballados: '+diasTraballados+' | Días baixa: '+it.dias+'</p>':'')+'<p><span class="term" data-term="salario_base">Salario base</span>: '+salarioBaseProporcional.toFixed(2)+' €'+(it.activa?' (proporcional)':'')+'</p><p><span class="term" data-term="linealidade">Linealidade</span>: '+linealProporcional.toFixed(2)+' €</p>'+(compAntigProporcional>0?'<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span> ('+(antig.porcentaje*100).toFixed(0)+'%): '+compAntigProporcional.toFixed(2)+' €</p>':'')+(noct.total>0?'<p><span class="term" data-term="nocturnidade">Nocturnidade</span>: '+noct.total.toFixed(2)+' €</p>':'')+(hex.total>0?'<p><span class="term" data-term="horas_extra">Horas extra</span>: '+hex.total.toFixed(2)+' €</p>':'')+(it.activa?'<p><span class="term" data-term="it">Incapacidade Temporal</span> ('+it.dias+' días): '+it.total.toFixed(2)+' €</p>':'')+(reduccion?'<p>Redución xornada: '+reduccion.tipo+'</p>':'')+'<p><strong><span class="term" data-term="total_devengo">Total devengo</span>: '+devengoTotal.toFixed(2)+' €</strong></p>';
 
   document.getElementById('resumoDeduccions').innerHTML='<h3>Deduccións</h3><p><span class="term" data-term="continxencias_comuns">Continxencias comúns</span> (4.7%): '+cc.toFixed(2)+' €</p><p><span class="term" data-term="base_accidentes">AT/EP + Formación</span> (1.65%): '+ate.toFixed(2)+' €</p><p><span class="term" data-term="desconto_irpf">IRPF</span>: '+irpf.toFixed(2)+' €</p><p><strong><span class="term" data-term="total_deduccions">Total deduccións</span>: '+totalDeduccions.toFixed(2)+' €</strong></p>';
 
@@ -571,31 +589,31 @@ function calcularResumo(){
 
 // GLOSARIO COMPLETO (recuperado do orixinal)
 const glosario={
-  mes:{titulo:'Mes da nómina',texto:'Mes ao que corresponde a nómina.'},
-  ano:{titulo:'Ano da nómina',texto:'Ano natural ao que pertence a nómina.'},
-  nivel:{titulo:'Nivel salarial',texto:'Nivel retributivo segundo o convenio de artes gráficas.'},
-  ingreso:{titulo:'Data de ingreso',texto:'Data na que comezaches a traballar na empresa. Usase para calcular a antigüidade.'},
-  situacions_especiais:{titulo:'Situacións especiais',texto:'Reducións de xornada por coidados, violencia de xénero ou nacemento prematuro segundo o ET.'},
-  prorrata_pagax:{titulo:'Prorrata',texto:'Distribución das pagas extra en 12 mensualidades.'},
-  nocturnidade:{titulo:'Nocturnidade',texto:'Plus por traballar en horario nocturno.'},
-  horas_extra:{titulo:'Horas extra',texto:'Horas traballadas por riba da xornada ordinaria.'},
-  it:{titulo:'Incapacidade Temporal',texto:'Baixa por enfermidade ou accidente. Calcúlase sobre a base reguladora.'},
-  it_info:{titulo:'Incapacidade Temporal (IT)',texto:'A IT é a situación de baixa por enfermidade ou accidente. A prestación calcúlase sobre a Base Reguladora Diaria (BRD), non sobre o salario directamente. Porcentaxes: Días 1-3: 0% | Días 4-20: 60% | Día 21+: 75% | AT/EP: 75% (día 1-4), 100% (día 5+)'},
-  data_baixa:{titulo:'Data da baixa',texto:'Día 1 da situación de IT.'},
-  data_alta:{titulo:'Data da alta',texto:'Último día de baixa. Ao día seguinte reincórpórase.'},
-  base_cotizacion:{titulo:'Base de cotización',texto:'Importe sobre o que se calculan as cotizacións. Inclúe salario base, complementos e pagas extra prorrateadas.'},
-  desconto_irpf:{titulo:'IRPF',texto:'Porcentaxe de retención do Imposto sobre a Renda.'},
-  salario_base:{titulo:'Salario base',texto:'Concepto retributivo principal. En Vicusgraf considéranse tódolos meses de 30 días.'},
-  linealidade:{titulo:'Linealidade',texto:'Complemento lineal pactado no convenio, que se percibe en 12 mensualidades.'},
-  complemento_antiguidade:{titulo:'Complemento de antigüidade',texto:'Complemento persoal que aumenta co tempo de servizos. No convenio: dous trienios e quinquenios sucesivos, cun 3% por cada unidade sobre o salario base.'},
-  total_devengo:{titulo:'Total devengo',texto:'Suma de todos os importes que se xeran a favor da persoa traballadora no mes.'},
-  continxencias_comuns:{titulo:'Continxencias comúns',texto:'Concepto de cotización que cobre enfermidade común e accidente non laboral.'},
-  base_accidentes:{titulo:'Base accidentes',texto:'Base de cotización para accidentes de traballo e enfermidades profesionais, que tamén serve para desemprego e formación profesional.'},
-  total_deduccions:{titulo:'Total deduccións',texto:'Suma de todas as deduccións que se restan dos devengos.'},
-  liquido_total:{titulo:'Líquido total a percibir',texto:'Importe final que recibe a persoa traballadora.'},
-  desglose_bases:{titulo:'Desglose de bases',texto:'Detalle das distintas bases de cotización e das súas porcentaxes.'},
-  base_total_cotizacion:{titulo:'Base total de cotización',texto:'Importe sobre o que se calculan as cotizacións á Seguridade Social.'},
-  brd:{titulo:'Base Reguladora Diaria (BRD)',texto:'Importe calculado dividindo a base de cotización do mes anterior entre 30 días. A BRD permanece FIXA durante toda a duración da baixa.'}
+  mes:{titulo:'Mes da nómina',texto:'Mes natural (de 1 a 12) ao que corresponde a nómina que se está calculando. Determina os días reais do mes (28 a 31) para cálculos con IT.'},
+  ano:{titulo:'Ano da nómina',texto:'Ano natural (ex.: 2025) ao que pertence a nómina. Determina que táboa salarial do convenio se aplica e se o mes de febreiro ten 28 ou 29 días.'},
+  nivel:{titulo:'Nivel profesional / Categoría',texto:'Nivel retributivo segundo o Convenio Colectivo de Artes Gráficas de Galicia (ou convenio aplicable). Cada nivel (1-19) ten asignados uns salarios base anuais negociados entre representantes sindicais e asociacións empresariais. Sinónimos: categoría profesional, grupo de cotización, nivel salarial.'},
+  ingreso:{titulo:'Data de ingreso na empresa',texto:'Data exacta (día/mes/ano) na que comezaches a traballar para este empresario. Determina a antigüidade para o cálculo de trienios/quinquenios. Non se admiten datas anteriores a decembro de 2013 por limitacións do sistema.'},
+  situacions_especiais:{titulo:'Situacións especiais de contrato',texto:'Reducións de xornada reguladas no Estatuto dos Traballadores (ET): Art. 37.6 (coidado de menores, familiares discapacitados/enfermos), Art. 37.7 (violencia de xénero), e permisos por nacemento prematuro/hospitalización. O salario calcúlase proporcionalmente ás horas traballadas.'},
+  prorrata_pagax:{titulo:'Prorrata de pagas extras',texto:'Sistema de distribución das pagas extraordinarias (verán, nadal, marzo) en 12 mensualidades, de modo que se percibe 1/12 cada mes en lugar de percibir a paga completa nun só mes. Sinónimos: pagas extra prorrateadas, división de pagas.'},
+  nocturnidade:{titulo:'Plus de nocturnidade / Traballo nocturno',texto:'Plus económico por traballar en horario nocturno (tipicamente 22:00h a 06:00h). Valor por hora: 25% do valor hora ordinaria para días laborables, 35% para días festivos. Calcúlase multiplicando o prezo hora por 8 horas polos días de nocturnidade.'},
+  horas_extra:{titulo:'Horas extraordinarias / Horas excedentes',texto:'<strong>Cálculo da hora ordinaria:</strong> Divídese o salario anual total (base + linealidade + complementos + pagas extra prorrateadas) entre as horas anuais de xornada (1.760h en 2025, 1.768h en anos anteriores).<br><br><strong>Valor das horas extra:</strong><br>• <strong>Laborables diurnas:</strong> Hora ordinaria × 1 (valor normal)<br>• <strong>Festivas diurnas:</strong> Hora ordinaria × 1,5 (50% máis)<br>• <strong>Laborables nocturnas:</strong> Hora ordinaria + plus nocturnidade (25%)<br>• <strong>Festivas nocturnas:</strong> (Hora ordinaria × 1,5) + plus nocturnidade festivo (35%)<br><br>Sinónimos: horas excedentes, sobretempo, horas adicionais.'},
+  it:{titulo:'Incapacidade Temporal (IT) / Baixa médica',texto:'Situación de baixa por enfermidade común, accidente (laboral ou non), ou outras causas. A prestación económica cubre parte do salario durante o tempo de incapacidade. Sinónimos: baixa médica, baixa por enfermidade, incapacidade laboral transitoria.'},
+  it_info:{titulo:'Incapacidade Temporal (IT) - Detalle completo',texto:'<strong>Concepto:</strong> Situación de imposibilidade temporal para o traballo por enfermidade ou accidente.<br><br><strong>Base de cálculo:</strong> Base Reguladora Diaria (BRD) = Base cotización mes anterior ÷ 30 días (fixo normativo).<br><br><strong>Porcentaxes de prestación:</strong><br>• <strong>Enfermidade común/ANL:</strong> Días 1-3: 0% (non se paga) | Días 4-20: 60% da BRD | Día 21+: 75% da BRD<br>• <strong>Con hospitalización (días 5-20):</strong> 100% durante o ingreso<br>• <strong>AT/EP (Accidente Traballo/Enfermidade Profesional):</strong> Días 1-4: 75% | Día 5+: 100%<br>• <strong>Doación órganos:</strong> 100% desde o día 1<br>• <strong>Situacións especiais mulleres:</strong> Según caso (menstruación incapacitante, interrupción embarazo)<br><br><strong>Nota:</strong> A BRD permanece FIXA durante toda a baixa; non cambia aínda que varien os salarios.'},
+  data_baixa:{titulo:'Data de efectos da baixa (IT)',texto:'Primeiro día en que se produce a situación de Incapacidade Temporal (día 1 de baixa). É o día que marca o inicio do cómputo de días para as porcentaxes da prestación. Sinónimos: fecha de baja, inicio de incapacidade.'},
+  data_alta:{titulo:'Data de alta médica',texto:'Último día en situación de IT. Ao día seguinte (día seguinte á alta) reincórpórase ao traballo. Se se deixa en branco, enténdese que a baixa continúa ata o final do mes ou ata a data actual. Sinónimos: fecha de alta, final de incapacidade, recuperación.'},
+  base_cotizacion:{titulo:'Base de cotización á Seguridade Social',texto:'Importe mensual sobre o que se calculan as cotizaciones do traballador e da empresa á Seguridade Social. Compónse de: salario base mensual + linealidade + complemento antigüidade + plus nocturnidade + horas extra + parte proporcional das pagas extra (se non son prorrateadas). É o "salario bruto" para efectos de cotización. Sinónimos: base de cotización mensual, base SS, salario de cotización.'},
+  desconto_irpf:{titulo:'IRPF (Imposto sobre a Renda das Persoas Físicas)',texto:'Porcentaxe de retención a conta do imposto sobre a renda que a empresa ingresa directamente en nome do traballador. Varía segundo o salario, situación familiar (fillos, matrimonio), e outros factores. Non é o imposto definitivo; a retención realízase na declaración anual (Renta). Sinónimos: retención fiscal, desconto de renda, imposto sobre o traballo.'},
+  salario_base:{titulo:'Salario base mensual',texto:'<strong>Origen:</strong> Táboas salariais anuais negociadas no Convenio Colectivo de Artes Gráficas (ou convenio sectorial aplicable), divididas entre 12 mensualidades.<br><br><strong>Cálculo:</strong> Salario base anual ÷ 12 meses.<br><br><strong>Con IT:</strong> Aplícase proporcionalmente aos días traballados reais do mes (non aos 30 días estándar). Por exemplo: se traballas 20 días dun mes de 30, cobras 20/30 do salario base, e os 10 días restantes cubrense coa prestación IT.<br><br>Sinónimos: soldo base, salario ordinario, retribución base, salario convenio.'},
+  linealidade:{titulo:'Complemento de linealidade / Plus de linealidade',texto:'Complemento salarial pactado no convenio colectivo que se percibe en 12 mensualidades (igual en todos os meses do ano). Representa unha cantidade fixa anual distribuída uniformemente. Calcúlase: Linealidade anual ÷ 12. Sinónimos: plus lineal, complemento mensual fixo, cantidade lineal.'},
+  complemento_antiguidade:{titulo:'Complemento de antigüidade / Trienios e quinquenios',texto:'Complemento persoal que aumenta co tempo de servizo na empresa.<br><br><strong>Cálculo no convenio:</strong><br>• Dous trienios (3 anos cada un): 3% + 3% = 6%<br>• Quinquenios sucesivos (5 anos cada un): 3% por cada quinquenio adicional<br>• Total: 3% por cada "unidade de antigüidade" sobre o salario base mensual<br><br><strong>Exemplo:</strong> 11 anos = 2 trienios + 1 quinquenio = 3 unidades = 9% do salario base.<br><br>Sinónimos: plus de antigüidade, trienios, quinquenios, senioridade, antigüidade consolidada.'},
+  total_devengo:{titulo:'Total devengado / Remuneración bruta',texto:'Suma de TODOS os conceptos retributivos que se xeran a favor do traballador no mes (tanto traballados como prestacións). Inclúe: salario base proporcional, linealidade, complementos, plus nocturnidade, horas extra, e prestación IT se a hai. É o "salario bruto" antes de descontar cotizacións e impostos. Sinónimos: devengo total, salario bruto, retribución total, importe devengado.'},
+  continxencias_comuns:{titulo:'Continxencias comúns (CC) / Cotización por enfermidade',texto:'Contía descontada do salario (4,7% do base de cotización) que financia: enfermidade común, accidente non laboral (ANL), e xubilación. É a "seguridade social" básica do traballador. A empresa paga outra parte maior (23,6%). Sinónimos: cotización por enfermidade, aporte a Seguridade Social, desconto de baixa médica futura.'},
+  base_accidentes:{titulo:'AT/EP + Formación Profesional + Desemprego',texto:'Conxunto de cotizacións descontadas do salario (1,65% do base de cotización) que financia: accidentes de traballo (AT), enfermidades profesionais (EP), formación profesional continua, e seguro de desemprego (paro). A empresa aporta porcentaxes adicionales máis altas. Sinónimos: cotización accidentes, aporte a formación, seguro de paro, desconto AT/EP.'},
+  total_deduccions:{titulo:'Total de deduccións / Retencións',texto:'Suma de TODOS os descontos aplicados ao salario: cotizacións á Seguridade Social (CC + AT/EP) + retención IRPF. É o diñeiro que non se percibe en nómina pero que se destina a impostos e seguros sociais. Sinónimos: descontos totais, retencións salariais, deducións obrigatorias.'},
+  liquido_total:{titulo:'Líquido total a percibir / Salario neto',texto:'Importe final que recibe o traballador na súa conta bancaria despois de restar TODAS as deduccións ao total devengado. É o "diñeiro real" que se cobra. Fórmula: Total devengo - Total deduccións = Líquido. Sinónimos: salario neto, cantidade líquida, importe a percibir, diñeiro a cobrar, nómina neta.'},
+  desglose_bases:{titulo:'Desglose de bases de cotización',texto:'Detalle técnico das distintas bases sobre as que se calculan as cotizacións á Seguridade Social e as súas porcentaxes aplicadas. Inclúe a base total, a base reguladora diaria (BRD), e o desglose por conceptos (continxencias comúns, accidentes, etc.).'},
+  base_total_cotizacion:{titulo:'Base total de cotización mensual',texto:'Importe máximo sobre o que se calculan as cotizacións do mes á Seguridade Social. Inclúe todos os devengos salariais (base, complementos, plus, horas extra) máis a parte proporcional das pagas extra non prorrateadas. Non pode ser inferior ao SMI nin superior ao tope máximo establecido pola SS.'},
+  brd:{titulo:'Base Reguladora Diaria (BRD)',texto:'<strong>Cálculo:</strong> Base de cotización do mes anterior ÷ 30 días (sempre 30, normativa fixa).<br><br><strong>Utilidade:</strong> Serve para calcular a prestación económica diaria durante a IT (baixa). Multiplícase pola BRD pola porcentaxe correspondente segundo o día de baixa (60%, 75%, 100%...).<br><br><strong>Importante:</strong> A BRD permanece FIXA e invariable durante toda a duración da baixa; non se actualiza aínda que cambien os salarios ou pasen os meses. É a "referencia conxelada" da túa última nómina completa antes da baixa.'}
 };
 
 // Eventos de glosario
