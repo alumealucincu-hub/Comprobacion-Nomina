@@ -32,6 +32,12 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
 .modal{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;z-index:9999;}
 .modal .card{background:#fff;padding:18px;border-radius:10px;max-width:720px;width:100%;max-height:80vh;overflow:auto;}
 .close-x{float:right;background:#eee;border-radius:8px;padding:6px;cursor:pointer;}
+/* Estilos para táboas responsive en móbil */
+@media (max-width:720px){
+  .modal table{font-size:0.8rem;}
+  .modal th,.modal td{padding:4px !important;word-break:break-word;}
+  .modal th:nth-child(2),.modal td:nth-child(2){display:none;} /* Ocultar columna data en móbil */
+}
 .inline-note{font-size:.9rem;color:#666;margin-top:6px;}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .situacion-especial-bloque{margin-top:12px;padding:12px;background:#f7fbf8;border-radius:10px;border:1px solid #b7d2c0;display:none;}
@@ -135,7 +141,7 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
       <div id="bloqueHospitalizacion" style="display:none;margin-left:20px;">
         <label class="checkbox-inline"><input type="checkbox" id="hospitalizacion"> Con hospitalización (días 5-20)</label>
       </div>
-      <label class="checkbox-inline"><input type="radio" name="tipoIT" value="atep" id="tipoATEP"> AT/EP</label>
+      <label class="checkbox-inline"><input type="radio" name="tipoIT" value="atep" id="tipoATEP"> AT/EP <span style="font-size:0.85rem;color:#666;">(Accidente Traballo / Enfermidade Profesional)</span></label>
       <label class="checkbox-inline"><input type="radio" name="tipoIT" value="donacion" id="tipoDonacion"> Doación de órganos</label>
       <label class="checkbox-inline"><input type="radio" name="tipoIT" value="especial_muller" id="tipoEspecialMuller"> Situacións especiais mulleres</label>
       <div id="bloqueSituacionMuller" style="display:none;margin-left:20px;">
@@ -162,6 +168,7 @@ button{display:inline-block;padding:12px;border-radius:12px;border:0;font-weight
       <div id="resumoBases" class="summary-box"></div>
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
         <button id="imprimir" class="next">Imprimir PDF</button>
+        <button id="imprimirGlosario" class="back ghost">Imprimir glosario</button>
         <button class="back ghost" data-back="1">Voltar ao principio</button>
         <button class="back" data-back="3">Atrás</button>
       </div>
@@ -331,6 +338,8 @@ function calcularAntiguedade(){
   if(p.length!==3)return null;
   const d=parseInt(p[0]),m=parseInt(p[1]),a=parseInt(p[2]);
   if(!d||!m||!a)return null;
+  // Converter ano a 4 díxitos se é necesario
+  if(String(a).length===2)a='20'+a;
   const ingreso=new Date(a,m-1,d);
   if(isNaN(ingreso.getTime()))return null;
   if(ingreso<new Date(2013,11,1))return null;
@@ -367,7 +376,7 @@ function calcularNocturnidade(dados){
 }
 
 function calcularHex(dados){
-  if(!dados||!document.getElementById('incHex').checked)return{total:0};
+  if(!dados||!document.getElementById('incHex').checked)return{total:0,desglose:[]};
   const vh=dados.valorHora;
   const nivel=dados.nivelSel;
   const pn=dados.noct.normal[nivel]||0;
@@ -376,9 +385,17 @@ function calcularHex(dados){
   const hf=parseFloat(document.getElementById('hexFest').value||0);
   const hln=parseFloat(document.getElementById('hexLabNoite').value||0);
   const hfn=parseFloat(document.getElementById('hexFestNoite').value||0);
+
+  const desglose=[];
+  if(hl>0)desglose.push({tipo:'Laborables diurnas',cantidad:hl,valorUnitario:vh,total:hl*vh,formula:'Hora ordinaria'});
+  if(hf>0)desglose.push({tipo:'Festivas diurnas',cantidad:hf,valorUnitario:vh*1.5,total:hf*vh*1.5,formula:'Hora ord. × 1.5'});
+  if(hln>0)desglose.push({tipo:'Laborables nocturnas',cantidad:hln,valorUnitario:vh+pn,total:hln*(vh+pn),formula:'Hora ord. + plus noct.'});
+  if(hfn>0)desglose.push({tipo:'Festivas nocturnas',cantidad:hfn,valorUnitario:vh*1.5+pf,total:hfn*(vh*1.5+pf),formula:'(Hora ord. × 1.5) + plus noct. fest.'});
+
   return{
     total:hl*vh+hf*vh*1.5+hln*(vh+pn)+hfn*(vh*1.5+pf),
-    horas:hl+hf+hln+hfn
+    horas:hl+hf+hln+hfn,
+    desglose:desglose
   };
 }
 
@@ -389,8 +406,17 @@ function calcularIT(){
   if(!db)return{activa:false,dias:0,total:0};
   const pb=db.split('/');
   if(pb.length!==3)return{activa:false,dias:0,total:0};
-  const inicio=new Date(pb[2],pb[1]-1,pb[0]);
-  const fin=da?new Date(da.split('/')[2],da.split('/')[1]-1,da.split('/')[0]):new Date();
+  // Converter ano a 4 díxitos se é necesario (aa -> 20aa)
+  let anoBaixa=pb[2];
+  if(anoBaixa.length===2)anoBaixa='20'+anoBaixa;
+  const inicio=new Date(anoBaixa,pb[1]-1,pb[0]);
+  let anoAlta='',mesAlta='',diaAlta='';
+  if(da){
+    const pa=da.split('/');
+    diaAlta=pa[0];mesAlta=pa[1];anoAlta=pa[2];
+    if(anoAlta.length===2)anoAlta='20'+anoAlta;
+  }
+  const fin=da?new Date(anoAlta,mesAlta-1,diaAlta):new Date();
   const mes=parseInt(document.getElementById('mes').value);
   const ano=parseInt(document.getElementById('ano').value);
   const inicioMes=new Date(ano,mes-1,1);
@@ -585,7 +611,7 @@ function calcularResumo(){
   const totalDeduccions=cc+ate+irpf;
 
   // Mostrar resumo con termos clicables
-  document.getElementById('resumoDevengos').innerHTML='<h3>Devengos</h3>'+(it.activa?'<p>Días do mes: '+diasReais+' | Días traballados: '+diasTraballados+' | Días baixa: '+it.dias+'</p>':'')+'<p><span class="term" data-term="salario_base">Salario base</span>: '+salarioBaseProporcional.toFixed(2)+' €'+(it.activa?' (proporcional)':'')+'</p><p><span class="term" data-term="linealidade">Linealidade</span>: '+linealProporcional.toFixed(2)+' €</p>'+(compAntigProporcional>0?'<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span> ('+(antig.porcentaje*100).toFixed(0)+'%): '+compAntigProporcional.toFixed(2)+' €</p>':'')+(noct.total>0?'<p><span class="term" data-term="nocturnidade">Nocturnidade</span>: '+noct.total.toFixed(2)+' €</p>':'')+(hex.total>0?'<p><span class="term" data-term="horas_extra">Horas extra</span>: '+hex.total.toFixed(2)+' €</p>':'')+(it.activa?'<p class="it-clickable" id="desgloseIT" style="cursor:pointer;color:#2d5c42;font-weight:600;" title="Clic para ver desglose día a día"><span class="term" data-term="it">Incapacidade Temporal</span> ('+it.dias+' días): '+it.total.toFixed(2)+' € [+]</p>':'')+(reduccion?'<p>Redución xornada: '+reduccion.tipo+'</p>':'')+'<p><strong><span class="term" data-term="total_devengo">Total devengo</span>: '+devengoTotal.toFixed(2)+' €</strong></p>';
+  document.getElementById('resumoDevengos').innerHTML='<h3>Devengos</h3>'+(it.activa?'<p>Días do mes: '+diasReais+' | Días traballados: '+diasTraballados+' | Días baixa: '+it.dias+'</p>':'')+'<p><span class="term" data-term="salario_base">Salario base</span>: '+salarioBaseProporcional.toFixed(2)+' €'+(it.activa?' (proporcional)':'')+'</p><p><span class="term" data-term="linealidade">Linealidade</span>: '+linealProporcional.toFixed(2)+' €</p>'+(compAntigProporcional>0?'<p><span class="term" data-term="complemento_antiguidade">Complemento antigüidade</span> ('+(antig.porcentaje*100).toFixed(0)+'%): '+compAntigProporcional.toFixed(2)+' €</p>':'')+(noct.total>0?'<p><span class="term" data-term="nocturnidade">Nocturnidade</span>: '+noct.total.toFixed(2)+' €</p>':'')+(hex.total>0?'<p class="hex-clickable" id="desgloseHEX" style="cursor:pointer;color:#2d5c42;font-weight:600;" title="Clic para ver desglose"><span class="term" data-term="horas_extra">Horas extra</span> ('+hex.horas+' h.): '+hex.total.toFixed(2)+' € [+]</p>':'')+(it.activa?'<p class="it-clickable" id="desgloseIT" style="cursor:pointer;color:#2d5c42;font-weight:600;" title="Clic para ver desglose día a día"><span class="term" data-term="it">Incapacidade Temporal</span> ('+it.dias+' días): '+it.total.toFixed(2)+' € [+]</p>':'')+(reduccion?'<p>Redución xornada: '+reduccion.tipo+'</p>':'')+'<p><strong><span class="term" data-term="total_devengo">Total devengo</span>: '+devengoTotal.toFixed(2)+' €</strong></p>';
 
   document.getElementById('resumoDeduccions').innerHTML='<h3>Deduccións</h3><p><span class="term" data-term="continxencias_comuns">Continxencias comúns</span> (4.7%): '+cc.toFixed(2)+' €</p><p><span class="term" data-term="base_accidentes">AT/EP + Formación</span> (1.65%): '+ate.toFixed(2)+' €</p><p><span class="term" data-term="desconto_irpf">IRPF</span>: '+irpf.toFixed(2)+' €</p><p><strong><span class="term" data-term="total_deduccions">Total deduccións</span>: '+totalDeduccions.toFixed(2)+' €</strong></p>';
 
@@ -698,6 +724,68 @@ document.addEventListener('click',e=>{
   if(e.target.id==='desgloseIT'||e.target.closest('#desgloseIT')){
     mostrarDesgloseIT();
   }
+});
+
+// Función para mostrar desglose de Horas Extra
+function mostrarDesgloseHEX(){
+  const dados=obterDatosNivelAno();
+  const hex=calcularHex(dados);
+  if(!hex.desglose||hex.desglose.length===0)return;
+
+  let html='<h3>Desglose de Horas Extraordinarias</h3>';
+  html+='<p style="font-size:0.9rem;color:#666;margin-bottom:12px;">Valor hora ordinaria: '+dados.valorHora.toFixed(4)+' €</p>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">';
+  html+='<thead style="background:#f3f8f4;"><tr><th style="padding:8px;border:1px solid #b7d2c0;text-align:left;">Tipo</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:right;">Cant.</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:right;">Valor/h</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:left;">Cálculo</th><th style="padding:8px;border:1px solid #b7d2c0;text-align:right;">Total</th></tr></thead>';
+  html+='<tbody>';
+
+  hex.desglose.forEach(d=>{
+    html+='<tr style="border-bottom:1px solid #e6efe6;">';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;">'+d.tipo+'</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;text-align:right;">'+d.cantidad+' h</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;text-align:right;">'+d.valorUnitario.toFixed(4)+' €</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;font-size:0.85rem;">'+d.formula+'</td>';
+    html+='<td style="padding:8px;border:1px solid #e6efe6;text-align:right;font-weight:600;">'+d.total.toFixed(2)+' €</td>';
+    html+='</tr>';
+  });
+
+  html+='</tbody>';
+  html+='<tfoot style="background:#f3f8f4;font-weight:700;"><tr><td colspan="4" style="padding:8px;border:1px solid #b7d2c0;text-align:right;">TOTAL HORAS EXTRA:</td><td style="padding:8px;border:1px solid #b7d2c0;text-align:right;color:#1f3b2c;">'+hex.total.toFixed(2)+' €</td></tr></tfoot>';
+  html+='</table>';
+
+  document.getElementById('modalTitle').textContent='Desglose de Horas Extra';
+  document.getElementById('modalBody').innerHTML=html;
+  document.getElementById('modal').style.display='flex';
+}
+// Engadir evento ao elemento de Horas Extra
+document.addEventListener('click',e=>{
+  if(e.target.id==='desgloseHEX'||e.target.closest('#desgloseHEX')){
+    mostrarDesgloseHEX();
+  }
+});
+// Función para imprimir glosario completo
+document.getElementById('imprimirGlosario')?.addEventListener('click',()=>{
+  let html='<html><head><title>Glosario - Calculadora Nómina Vicusgraf</title>';
+  html+='<style>body{font-family:Arial,sans-serif;padding:20px;color:#1f3b2c;}h1{color:#2d5c42;border-bottom:2px solid #4caf50;padding-bottom:10px;}h2{color:#2d5c42;margin-top:25px;font-size:1.1rem;}p{margin:5px 0 15px 0;line-height:1.5;}strong{color:#1f3b2c;}</style>';
+  html+='</head><body>';
+  html+='<h1>Glosario de Conceptos da Nómina</h1>';
+  html+='<p style="font-size:0.9rem;color:#666;margin-bottom:20px;">Calculadora Nómina - Vicusgraf</p>';
+
+  const terminosOrdenados=Object.keys(glosario).sort((a,b)=>glosario[a].titulo.localeCompare(glosario[b].titulo));
+
+  terminosOrdenados.forEach(key=>{
+    const g=glosario[key];
+    html+='<h2>'+g.titulo+'</h2>';
+    html+='<p>'+g.texto+'</p>';
+  });
+
+  html+='<hr style="margin-top:30px;border-color:#e6efe6;">';
+  html+='<p style="font-size:0.8rem;color:#666;text-align:center;">Documento xerado o '+new Date().toLocaleDateString('gl-ES')+'</p>';
+  html+='</body></html>';
+
+  const ventana=window.open('','_blank');
+  ventana.document.write(html);
+  ventana.document.close();
+  ventana.print();
 });
 </script>
 </body>
