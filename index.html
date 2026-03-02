@@ -340,6 +340,9 @@ function calcularAntiguedade(){
   if(!d||!m||!a)return null;
   // Converter ano a 4 díxitos se é necesario
   if(String(a).length===2)a='20'+a;
+  // Converter ano a 4 díxitos se é necesario (aa -> 20aa)
+  if(String(a).length===2)a='20'+a;
+  a=parseInt(a,10);
   const ingreso=new Date(a,m-1,d);
   if(isNaN(ingreso.getTime()))return null;
   if(ingreso<new Date(2013,11,1))return null;
@@ -400,35 +403,60 @@ function calcularHex(dados){
 }
 
 function calcularIT(){
-  if(!document.getElementById('incIT').checked)return{activa:false,dias:0,total:0};
+  if(!document.getElementById('incIT').checked)return{activa:false,dias:0,total:0,desgloseDias:[]};
   const db=document.getElementById('dataBaixa').value;
   const da=document.getElementById('dataAlta').value;
-  if(!db)return{activa:false,dias:0,total:0};
+  if(!db)return{activa:false,dias:0,total:0,desgloseDias:[]};
   const pb=db.split('/');
-  if(pb.length!==3)return{activa:false,dias:0,total:0};
+  if(pb.length!==3)return{activa:false,dias:0,total:0,desgloseDias:[]};
+
+  // Validar que día, mes e ano son números válidos
+  const diaB=parseInt(pb[0],10);
+  const mesB=parseInt(pb[1],10);
+  let anoB=pb[2];
+
+  if(isNaN(diaB)||isNaN(mesB))return{activa:false,dias:0,total:0,desgloseDias:[]};
+
   // Converter ano a 4 díxitos se é necesario (aa -> 20aa)
-  let anoBaixa=pb[2];
-  if(anoBaixa.length===2)anoBaixa='20'+anoBaixa;
-  const inicio=new Date(anoBaixa,pb[1]-1,pb[0]);
-  let anoAlta='',mesAlta='',diaAlta='';
+  if(anoB && anoB.length===2)anoB='20'+anoB;
+  const anoBN=parseInt(anoB,10);
+  if(isNaN(anoBN))return{activa:false,dias:0,total:0,desgloseDias:[]};
+
+  const inicio=new Date(anoBN,mesB-1,diaB);
+  if(isNaN(inicio.getTime()))return{activa:false,dias:0,total:0,desgloseDias:[]};
+
+  let fin;
   if(da){
     const pa=da.split('/');
-    diaAlta=pa[0];mesAlta=pa[1];anoAlta=pa[2];
-    if(anoAlta.length===2)anoAlta='20'+anoAlta;
+    if(pa.length===3){
+      const diaA=parseInt(pa[0],10);
+      const mesA=parseInt(pa[1],10);
+      let anoA=pa[2];
+      if(anoA && anoA.length===2)anoA='20'+anoA;
+      const anoAN=parseInt(anoA,10);
+      if(!isNaN(diaA)&&!isNaN(mesA)&&!isNaN(anoAN)){
+        fin=new Date(anoAN,mesA-1,diaA);
+      }
+    }
   }
-  const fin=da?new Date(anoAlta,mesAlta-1,diaAlta):new Date();
-  const mes=parseInt(document.getElementById('mes').value);
-  const ano=parseInt(document.getElementById('ano').value);
-  const inicioMes=new Date(ano,mes-1,1);
-  const finMes=new Date(ano,mes,0);
+  if(!fin||isNaN(fin.getTime()))fin=new Date();
+
+  const mesSel=parseInt(document.getElementById('mes').value);
+  const anoSel=parseInt(document.getElementById('ano').value);
+  if(isNaN(mesSel)||isNaN(anoSel))return{activa:false,dias:0,total:0,desgloseDias:[]};
+
+  const inicioMes=new Date(anoSel,mesSel-1,1);
+  const finMes=new Date(anoSel,mesSel,0);
   const start=inicio>inicioMes?inicio:inicioMes;
   const end=fin<finMes?fin:finMes;
-  if(start>end)return{activa:false,dias:0,total:0};
+  if(start>end)return{activa:false,dias:0,total:0,desgloseDias:[]};
+
   const dias=Math.floor((end-start)/(1000*60*60*24))+1;
   const tipo=document.querySelector('input[name="tipoIT"]:checked')?.value||'ec_anl';
   const brd=brdCalculada||0;
   let total=0;
   const desglose=[];
+
   for(let i=1;i<=dias;i++){
     const diaBaixa=Math.floor((start-inicio)/(1000*60*60*24))+i;
     let pct=0;
